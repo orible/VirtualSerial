@@ -186,6 +186,7 @@
             richTextBoxLog.Location = new Point(6, 22);
             richTextBoxLog.Name = "richTextBoxLog";
             richTextBoxLog.ReadOnly = true;
+            richTextBoxLog.ScrollBars = RichTextBoxScrollBars.ForcedVertical;
             richTextBoxLog.Size = new Size(758, 79);
             richTextBoxLog.TabIndex = 0;
             richTextBoxLog.Text = "";
@@ -203,6 +204,7 @@
             Name = "ScriptTerminal";
             Text = "LScripter";
             Load += ScriptTerminal_Load;
+            KeyDown += ScriptTerminal_KeyDown;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -31,7 +32,7 @@ namespace VirtualSerial
 
         Script _script;
         DynValue _fnMain;
-        string scriptPath;
+
         string loadedScript;
 
         void LoadScript()
@@ -111,6 +112,7 @@ namespace VirtualSerial
         }
 
         bool FlagScriptChanged = false;
+        bool FlagScriptSaved = false;
 
         void Error(string s)
         {
@@ -143,12 +145,19 @@ namespace VirtualSerial
             return this.richTextBoxScriptInput.Text;
         }
 
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog dlg = new SaveFileDialog();
             if (dlg.ShowDialog() != DialogResult.OK)
             {
-                string file = dlg.FileName;
+                FlagScriptSaved = true;
+                File.WriteAllText(dlg.FileName, this.richTextBoxScriptInput.Text);
+                //using (Stream stream = dlg.OpenFile())
+                //using (StreamWriter sw = new StreamWriter(stream))
+                //{
+                //    sw.Write(this.richTextBox1.Text);
+                //    sw.Flush();
+                //}
             }
         }
 
@@ -170,19 +179,32 @@ namespace VirtualSerial
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
-            dlg.InitialDirectory = Application.StartupPath + "\\lua";
+
+            dlg.InitialDirectory = Path.Join(Application.StartupPath, "lua");
             if (dlg.ShowDialog() != DialogResult.OK) return;
             Stream file = dlg.OpenFile();
-            scriptPath = dlg.FileName;
             using (StreamReader streamReader = new StreamReader(file))
             {
+                loadedScript = dlg.FileName;
+                this.Text = "LScripter | " + loadedScript;
                 this.richTextBoxScriptInput.Text = streamReader.ReadToEnd();
             }
             FlagScriptChanged = true;
         }
+        void UpdateTitle()
+        {
+            if (loadedScript.Length < 1)
+                this.Text = "LScripter";
+
+            this.Text = $"LScripter | {loadedScript} {(!FlagScriptSaved ? "[Unsaved]" : "")}";
+        }
 
         private void richTextBoxScriptInput_TextChanged(object sender, EventArgs e)
         {
+            if (!FlagScriptChanged)
+            {
+                UpdateTitle();
+            }
             FlagScriptChanged = true;
         }
 
@@ -197,6 +219,14 @@ namespace VirtualSerial
             // classic flipflop :)
             flagIsAttached = !flagIsAttached;
             attachToolStripMenuItem.Text = state.Connected ? "Detach" : "Attach";
+        }
+
+        private void ScriptTerminal_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Modifiers == Keys.Control && e.KeyCode == Keys.S)
+            {
+               saveToolStripMenuItem_Click(sender, e);
+            }
         }
     }
 }
