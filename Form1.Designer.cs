@@ -665,6 +665,7 @@
             MinimumSize = new Size(842, 612);
             Name = "Form1";
             Text = "Quick Virtual Serial (TX/RX)";
+            FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();

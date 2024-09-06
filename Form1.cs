@@ -517,5 +517,7 @@ namespace VirtualSerial
         }
 
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e) { }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e) => this.buttonDisconnect_Click(sender, e);
     }
 }
