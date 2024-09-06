@@ -484,7 +484,7 @@ namespace VirtualSerial
         // emit messages to child windows on their UI thread :)
         private void ListenersEmitMessage(Message msg)
         {
-            foreach(var e in UITermList)
+            foreach (var e in UITermList)
             {
                 e.Invoke(() => e.OnMessage(this, new MessageEventArgs(msg)));
             }

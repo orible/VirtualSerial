@@ -148,7 +148,9 @@ namespace VirtualSerial
         private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog dlg = new SaveFileDialog();
-            if (dlg.ShowDialog() != DialogResult.OK)
+            dlg.Filter = "Script|*.lua";
+            dlg.ShowDialog();
+            if (dlg.FileName != "")
             {
                 FlagScriptSaved = true;
                 File.WriteAllText(dlg.FileName, this.richTextBoxScriptInput.Text);
@@ -193,7 +195,7 @@ namespace VirtualSerial
         }
         void UpdateTitle()
         {
-            if (loadedScript.Length < 1)
+            if (loadedScript == null || loadedScript.Length < 1)
                 this.Text = "LScripter";
 
             this.Text = $"LScripter | {loadedScript} {(!FlagScriptSaved ? "[Unsaved]" : "")}";
