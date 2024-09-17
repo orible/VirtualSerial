@@ -78,7 +78,11 @@
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             aboutToolStripMenuItem = new ToolStripMenuItem();
+            settingsToolStripMenuItem = new ToolStripMenuItem();
+            darkModeToolStripMenuItem = new ToolStripMenuItem();
             groupBox4 = new GroupBox();
+            label16 = new Label();
+            comboBoxReadMode = new ComboBox();
             button2 = new Button();
             label2 = new Label();
             textBoxStopCode = new TextBox();
@@ -226,6 +230,8 @@
             richTextBoxInput.Size = new Size(392, 81);
             richTextBoxInput.TabIndex = 24;
             richTextBoxInput.TextChanged += richTextBoxInput_TextChanged;
+            richTextBoxInput.KeyDown += richTextBoxInput_KeyDown;
+            richTextBoxInput.KeyPress += richTextBoxInput_KeyPress;
             // 
             // buttonInputHexSend
             // 
@@ -422,7 +428,7 @@
             // label14
             // 
             label14.AutoSize = true;
-            label14.Location = new Point(358, 75);
+            label14.Location = new Point(360, 75);
             label14.Name = "label14";
             label14.Size = new Size(112, 15);
             label14.TabIndex = 32;
@@ -527,6 +533,7 @@
             // 
             // buttonDisconnect
             // 
+            buttonDisconnect.Enabled = false;
             buttonDisconnect.Location = new Point(727, 99);
             buttonDisconnect.Name = "buttonDisconnect";
             buttonDisconnect.Size = new Size(75, 23);
@@ -556,7 +563,7 @@
             // menuStrip1
             // 
             menuStrip1.ImageScalingSize = new Size(24, 24);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, aboutToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, aboutToolStripMenuItem, settingsToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(4, 1, 0, 1);
@@ -578,9 +585,25 @@
             aboutToolStripMenuItem.Text = "About";
             aboutToolStripMenuItem.Click += aboutToolStripMenuItem_Click;
             // 
+            // settingsToolStripMenuItem
+            // 
+            settingsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { darkModeToolStripMenuItem });
+            settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            settingsToolStripMenuItem.Size = new Size(61, 22);
+            settingsToolStripMenuItem.Text = "Settings";
+            // 
+            // darkModeToolStripMenuItem
+            // 
+            darkModeToolStripMenuItem.Name = "darkModeToolStripMenuItem";
+            darkModeToolStripMenuItem.Size = new Size(132, 22);
+            darkModeToolStripMenuItem.Text = "Dark Mode";
+            darkModeToolStripMenuItem.Click += darkModeToolStripMenuItem_Click;
+            // 
             // groupBox4
             // 
             groupBox4.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupBox4.Controls.Add(label16);
+            groupBox4.Controls.Add(comboBoxReadMode);
             groupBox4.Controls.Add(button2);
             groupBox4.Controls.Add(label2);
             groupBox4.Controls.Add(textBoxStopCode);
@@ -615,6 +638,23 @@
             groupBox4.TabStop = false;
             groupBox4.Text = "Settings";
             // 
+            // label16
+            // 
+            label16.AutoSize = true;
+            label16.Location = new Point(360, 21);
+            label16.Name = "label16";
+            label16.Size = new Size(71, 15);
+            label16.TabIndex = 54;
+            label16.Text = "Read Buffer:";
+            // 
+            // comboBoxReadMode
+            // 
+            comboBoxReadMode.FormattingEnabled = true;
+            comboBoxReadMode.Location = new Point(476, 15);
+            comboBoxReadMode.Name = "comboBoxReadMode";
+            comboBoxReadMode.Size = new Size(100, 23);
+            comboBoxReadMode.TabIndex = 53;
+            // 
             // button2
             // 
             button2.Location = new Point(726, 68);
@@ -628,7 +668,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(363, 104);
+            label2.Location = new Point(360, 103);
             label2.Name = "label2";
             label2.Size = new Size(92, 15);
             label2.TabIndex = 51;
@@ -740,5 +780,9 @@
         private Label labelProg2;
         private Label labelProg3;
         private Button button2;
+        private ComboBox comboBoxReadMode;
+        private Label label16;
+        private ToolStripMenuItem settingsToolStripMenuItem;
+        private ToolStripMenuItem darkModeToolStripMenuItem;
     }
 }

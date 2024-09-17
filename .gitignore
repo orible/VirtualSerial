@@ -4,5 +4,7 @@
 
 /bin/Debug/net7.0-windows
 /obj
+/.vs
 /.vs/VirtualSerial
 /bin/Release/net7.0-windows
+/Properties

@@ -8,6 +8,7 @@ using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using static VirtualSerial.ColourScheme;
 
 namespace VirtualSerial
 {
@@ -39,6 +40,16 @@ namespace VirtualSerial
             comboBoxSendAs.DataSource = new Message.SendAsEncoding[] { Message.SendAsEncoding.ASCII, Message.SendAsEncoding.ASCII_utf8, Message.SendAsEncoding.ASCII_UTF7 };
             toolStripStatusLabelActivity.Text = "NOT CONNECTED";
             toolStripStatusLabelVersion.Text = AssemblyInfo.GetGitHash();
+            comboBoxReadMode.DataSource = new ReadMode[] {
+                ReadMode.RAW,
+                ReadMode.LINE_BUFFERED
+            };
+        }
+
+        public enum ReadMode
+        {
+            LINE_BUFFERED,
+            RAW,
         }
 
         private byte[] GetStopCode()
@@ -46,7 +57,12 @@ namespace VirtualSerial
             byte[] buf = ParseBadHexStringLiteral(this.textBoxStopCode.Text, 2);
             return buf.Take(buf.Length - 1).ToArray();
         }
-        private void Form1_Load(object sender, EventArgs e) { }
+
+        ColourSchemeData themeData;
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            themeData = new ColourSchemeData(this.BackColor, this.ForeColor);
+        }
 
         BindingList<String> ports;
 
@@ -76,8 +92,10 @@ namespace VirtualSerial
         List<string> writeMessages = new List<string>();
         volatile bool WriteThreadRunning;
 
-        void _WriteOpenPort()
+        void _WriteOpenPort(object state)
         {
+            var initState = (State)state;
+
             richTextBoxInputLog.Invoke(() => { richTextBoxInputLog.AppendText("[Thread] Start\n"); });
             WriteThreadRunning = true;
             bool _stop = false;
@@ -132,12 +150,14 @@ namespace VirtualSerial
         const int ReadChunkSize = 512;
 
         // Poll open port and control message thread
-        void _ReadOpenPort()
+        void _ReadOpenPort(object state)
         {
+            var initState = (State)state;
             int spinnerActivity = 0;
             int spinnerMsgBuf = 0;
-
+            ReadMode readMode = initState.buffermode;
             ReadThreadRunning = true;
+
             MemoryStream mem = new MemoryStream();
             byte[] stopcode = { 0x0D };
             stopcode = GetStopCode();
@@ -173,20 +193,26 @@ namespace VirtualSerial
 
                 try
                 {
-                    //byte[] buf;
-                    //if (ReadBufferLinestop(_serialPort, ChunkSize, ref mem, stopcode, out buf) < 1)
-                    //{
-                    //    continue;
-                    //}
-
                     labelProg2.Invoke(() => labelProg2.Text = "Checking port buffer");
                     byte[] buf = new byte[1024];
-                    int read = _serialPort.Read(buf, 0, 1024);
-                    if (read < 1) continue;
+                    string message;
 
-                    string message = Encoding.ASCII.GetString(buf, 0, read);
-                    //string message = _serialPort.ReadLine();
-                    //ParseHexString(message, 2);
+                    switch (readMode)
+                    {
+                        case ReadMode.LINE_BUFFERED:
+                            message = _serialPort.ReadLine();
+                            break;
+                        case ReadMode.RAW:
+                            int read = _serialPort.Read(buf, 0, 1024);
+                            if (read < 1) continue;
+                            message = Encoding.ASCII.GetString(buf, 0, read);
+                            break;
+                        default:
+                            this.richTextBoxOutputLog.Invoke(() => richTextBoxOutputLog.AppendText("error: no buffer mode selected, discarding buffer"));
+                            continue;
+                            break;
+                    }
+
                     string timecode = GetTimecode(DateTime.Now);
                     this.richTextBoxOutputLog.Invoke((string data, string timecode) =>
                     {
@@ -199,6 +225,7 @@ namespace VirtualSerial
                         richTextBoxOutputLog.AppendText(data);
                         richTextBoxOutputLog.ScrollToCaret();
                     }, message, timecode);
+
                     ListenersEmitMessage(new Message(buf));
                 }
                 catch (Exception e)
@@ -243,7 +270,7 @@ namespace VirtualSerial
 
         Regex isNumber = new Regex(@"^\d$");
 
-        int GetPortSettings(ref SerialPort port)
+        int GetPortSettings(ref SerialPort port, ref State state)
         {
             //if (!isNumber.IsMatch(this.textBoxInputBaud.Text))
             //    throw new System.ArgumentException("Input Baud bad input");
@@ -275,15 +302,20 @@ namespace VirtualSerial
             _serialPort.StopBits = stops.stopBits;
             _serialPort.ReadTimeout = readtimeout;
             _serialPort.WriteTimeout = writetimeout;
+            state.bits = databits.bits;
+            state.readtimeout = readtimeout;
+            state.writetimeout = writetimeout;
+            state.parity = combo.parity;
             //_serialPort.Encoding = System.Text.Encoding;
             //System.Text.Encoding.GetEncoding(1252);
             return 1;
         }
+
         void InitPort()
         {
             toolStripStatusLabelActivity.Text = "STARTING";
-            Thread readThread = new Thread(_ReadOpenPort);
-            Thread writeThread = new Thread(_WriteOpenPort);
+            Thread readThread = new Thread(new ParameterizedThreadStart(_ReadOpenPort));
+            Thread writeThread = new Thread(new ParameterizedThreadStart(_WriteOpenPort));
 
             // eat message buffer
             while (queueMessageRead.TryTake(out _)) { }
@@ -292,15 +324,18 @@ namespace VirtualSerial
             // open new port
             _serialPort = new SerialPort();
 
+            State state = new State(true);
             // apply UI settings
-            GetPortSettings(ref _serialPort);
+            GetPortSettings(ref _serialPort, ref state);
             _serialPort.Handshake = Handshake.None;
 
             // open threads and start port
             _serialPort.Open();
 
-            readThread.Start();
-            writeThread.Start();
+
+            state.buffermode = (ReadMode)comboBoxReadMode.SelectedItem;
+            readThread.Start(state);
+            writeThread.Start(state);
             ListenersEmitServiceStatus(new State(true));
         }
 
@@ -378,6 +413,9 @@ namespace VirtualSerial
         {
             // convert ascii to text
             if (skipTextBoxUpdate) { skipTextBoxUpdate = false; return; }
+
+            InputTextHistory.UpdateBuffer(this.richTextBoxInput.Text);
+
             byte[] buf = Encoding.ASCII.GetBytes(this.richTextBoxInput.Text);
             string hexbuf = BitConverter.ToString(buf, 0, buf.Length).Replace("-", " ");
             richTextBoxInputHex.Text = hexbuf;
@@ -411,6 +449,16 @@ namespace VirtualSerial
         {
             if (richTextBoxInput.Text == "") return;
             string data = richTextBoxInput.Text;
+
+            // commit and clear buffer
+            //if (!UIIgnoreTextCursorUpdate)
+            //{
+                InputTextHistory.UpdateBuffer(richTextBoxInput.Text);
+                UIIgnoreTextCursorUpdate = false;
+            //}
+
+            InputTextHistory.Commit();
+
             Message.SendAsEncoding enc = (Message.SendAsEncoding)this.comboBoxSendAs.SelectedItem;
 
             byte[] buf;
@@ -436,10 +484,7 @@ namespace VirtualSerial
 
         private void buttonDisconnect_Click(object sender, EventArgs e) => ShutDownThreads();
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            new About().ShowDialog();
-        }
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e) => (new About()).ShowDialog();
 
         private void buttonInputHexSend_Click(object sender, EventArgs e)
         {
@@ -519,5 +564,39 @@ namespace VirtualSerial
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e) { }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e) => this.buttonDisconnect_Click(sender, e);
+
+        bool UIColorScheme = false;
+
+        private void darkModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            UIColorScheme = !UIColorScheme;
+            darkModeToolStripMenuItem.Text = UIColorScheme ? "Light Mode" : "Dark Mode";
+            ColourScheme.ChangeTheme(UIColorScheme ? ColourScheme.dark : themeData, this);
+        }
+
+        private void richTextBoxInput_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            
+        }
+
+        InputHistory<string> InputTextHistory = new InputHistory<string>();
+        bool UIIgnoreTextCursorUpdate = false;
+
+        private void richTextBoxInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.KeyCode) 
+            {
+                case Keys.Up:
+                    InputTextHistory.Back();
+                    richTextBoxInput.Text = InputTextHistory.GetCursor();
+                    UIIgnoreTextCursorUpdate = true;
+                    break;
+                case Keys.Down:
+                    InputTextHistory.Forward();
+                    richTextBoxInput.Text = InputTextHistory.GetCursor();
+                    UIIgnoreTextCursorUpdate = true;
+                    break;
+            }
+        }
     }
 }

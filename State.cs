@@ -8,13 +8,18 @@ using static VirtualSerial.Form1;
 
 namespace VirtualSerial
 {
+    // represents program state
+    // copies of this are sent to threads to tell them what they need to know
     public class State
     {
         public bool Connected;
-        DataBits bits;
-        Parity parity;
-        StopBits stop;
-        int read, write;
+        public DataBits bits;
+        public Parity parity;
+        public StopBits stop;
+        public ReadMode buffermode;
+
+        public int readtimeout;
+        public int writetimeout;
 
         public State(bool connected)
         {

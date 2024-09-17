@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.Serialization.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static VirtualSerial.Form1;
 
@@ -35,6 +36,17 @@ namespace VirtualSerial
 
         string loadedScript;
 
+        BlockingCollection<Message> messages;
+
+        void _Thread()
+        {
+            while (true)
+            {
+                Message msg = messages.Take();
+
+            }
+        }
+
         void LoadScript()
         {
             Log($"[vm] compiling script...\n");
@@ -47,6 +59,7 @@ namespace VirtualSerial
             script.Globals["disconnect"] = (Func<string, int>)lfuncSend;
             script.Globals["print"] = (Func<string, int>)lfuncPrint;
             script.Globals["debug"] = (Func<string, int>)lfuncPrint;
+            script.Globals["writeout"] = (Func<string, MoonSharp.Interpreter.Table, int>)lfuncWriteFile;
             _fnMain = fnMain;
             _script = script;
         }
@@ -73,6 +86,14 @@ namespace VirtualSerial
         int lfuncDisconnect()
         {
             return -1;
+        }
+        int lfuncWriteFile(string dir, MoonSharp.Interpreter.Table list)
+        {
+            string path = $"./output/{dir}";
+            string dirpath = Path.GetFullPath(Path.GetDirectoryName(path));
+            System.IO.Directory.CreateDirectory(dirpath);
+            File.AppendAllLines(path, new string[]{ list.TableToJson() });
+            return 1;
         }
         int lfuncPrint(string str)
         {

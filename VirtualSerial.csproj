@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="output\" />
     <Folder Include="presets\" />
   </ItemGroup>
 
@@ -38,6 +39,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="configs\example.cfg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="lua\example.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
