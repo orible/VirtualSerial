@@ -42,13 +42,15 @@ namespace VirtualSerial
             toolStripStatusLabelVersion.Text = AssemblyInfo.GetGitHash();
             comboBoxReadMode.DataSource = new ReadMode[] {
                 ReadMode.RAW,
-                ReadMode.LINE_BUFFERED
+                ReadMode.LINE_BUFFERED,
+                ReadMode.STOP_BUFFERED
             };
         }
 
         public enum ReadMode
         {
             LINE_BUFFERED,
+            STOP_BUFFERED,
             RAW,
         }
 
@@ -158,7 +160,9 @@ namespace VirtualSerial
             ReadMode readMode = initState.buffermode;
             ReadThreadRunning = true;
 
-            MemoryStream mem = new MemoryStream();
+
+            StopBuffer _stopBuffer = new StopBuffer();
+            //MemoryStream mem = new MemoryStream();
             byte[] stopcode = { 0x0D };
             stopcode = GetStopCode();
 
@@ -196,14 +200,22 @@ namespace VirtualSerial
                     labelProg2.Invoke(() => labelProg2.Text = "Checking port buffer");
                     byte[] buf = new byte[1024];
                     string message;
-
+                    int read;
                     switch (readMode)
                     {
+                        case ReadMode.STOP_BUFFERED:
+                            int sz = _serialPort.Read(buf, 0, 1024);
+                            _stopBuffer.Add(buf, sz);
+                            byte[] outbuf;
+                            read = _stopBuffer.GetMessage(stopcode, out outbuf);
+                            if (read < 1) continue;
+                            message = Encoding.ASCII.GetString(outbuf, 0, read);
+                            break;
                         case ReadMode.LINE_BUFFERED:
                             message = _serialPort.ReadLine();
                             break;
                         case ReadMode.RAW:
-                            int read = _serialPort.Read(buf, 0, 1024);
+                            read = _serialPort.Read(buf, 0, 1024);
                             if (read < 1) continue;
                             message = Encoding.ASCII.GetString(buf, 0, read);
                             break;
@@ -245,6 +257,8 @@ namespace VirtualSerial
                     }
                 }
             }
+
+            queueMessageWrite.Add(new Message(Message.MessageCode.STOP));
 
             labelProg2.Invoke(() => labelProg2.Text = "Shutting down...");
 
