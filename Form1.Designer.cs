@@ -80,6 +80,11 @@
             aboutToolStripMenuItem = new ToolStripMenuItem();
             settingsToolStripMenuItem = new ToolStripMenuItem();
             darkModeToolStripMenuItem = new ToolStripMenuItem();
+            loadToolStripMenuItem = new ToolStripMenuItem();
+            presetToolStripMenuItem = new ToolStripMenuItem();
+            savePesetToolStripMenuItem = new ToolStripMenuItem();
+            loadSessionToolStripMenuItem = new ToolStripMenuItem();
+            saveSessionToolStripMenuItem = new ToolStripMenuItem();
             groupBox4 = new GroupBox();
             label16 = new Label();
             comboBoxReadMode = new ComboBox();
@@ -563,7 +568,7 @@
             // menuStrip1
             // 
             menuStrip1.ImageScalingSize = new Size(24, 24);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, aboutToolStripMenuItem, settingsToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, aboutToolStripMenuItem, settingsToolStripMenuItem, loadToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(4, 1, 0, 1);
@@ -598,6 +603,41 @@
             darkModeToolStripMenuItem.Size = new Size(132, 22);
             darkModeToolStripMenuItem.Text = "Dark Mode";
             darkModeToolStripMenuItem.Click += darkModeToolStripMenuItem_Click;
+            // 
+            // loadToolStripMenuItem
+            // 
+            loadToolStripMenuItem.Checked = true;
+            loadToolStripMenuItem.CheckState = CheckState.Checked;
+            loadToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { presetToolStripMenuItem, savePesetToolStripMenuItem, loadSessionToolStripMenuItem, saveSessionToolStripMenuItem });
+            loadToolStripMenuItem.Name = "loadToolStripMenuItem";
+            loadToolStripMenuItem.Size = new Size(58, 22);
+            loadToolStripMenuItem.Text = "Session";
+            // 
+            // presetToolStripMenuItem
+            // 
+            presetToolStripMenuItem.Name = "presetToolStripMenuItem";
+            presetToolStripMenuItem.Size = new Size(180, 22);
+            presetToolStripMenuItem.Text = "Load Preset";
+            presetToolStripMenuItem.Click += presetToolStripMenuItem_Click;
+            // 
+            // savePesetToolStripMenuItem
+            // 
+            savePesetToolStripMenuItem.Name = "savePesetToolStripMenuItem";
+            savePesetToolStripMenuItem.Size = new Size(180, 22);
+            savePesetToolStripMenuItem.Text = "Save Preset";
+            savePesetToolStripMenuItem.Click += savePesetToolStripMenuItem_Click;
+            // 
+            // loadSessionToolStripMenuItem
+            // 
+            loadSessionToolStripMenuItem.Name = "loadSessionToolStripMenuItem";
+            loadSessionToolStripMenuItem.Size = new Size(180, 22);
+            loadSessionToolStripMenuItem.Text = "Load Session";
+            // 
+            // saveSessionToolStripMenuItem
+            // 
+            saveSessionToolStripMenuItem.Name = "saveSessionToolStripMenuItem";
+            saveSessionToolStripMenuItem.Size = new Size(180, 22);
+            saveSessionToolStripMenuItem.Text = "Save Session";
             // 
             // groupBox4
             // 
@@ -784,5 +824,10 @@
         private Label label16;
         private ToolStripMenuItem settingsToolStripMenuItem;
         private ToolStripMenuItem darkModeToolStripMenuItem;
+        private ToolStripMenuItem loadToolStripMenuItem;
+        private ToolStripMenuItem presetToolStripMenuItem;
+        private ToolStripMenuItem savePesetToolStripMenuItem;
+        private ToolStripMenuItem loadSessionToolStripMenuItem;
+        private ToolStripMenuItem saveSessionToolStripMenuItem;
     }
 }

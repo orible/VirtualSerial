@@ -25,17 +25,21 @@ namespace VirtualSerial
                     stop = i;
                 }
             }
-            if (stop <= ReadPosition)
+
+            int bufsz = stop - (int)ReadPosition;
+
+            if (stop == -1 || bufsz < 1)
             {
                 outbuf = null;
                 return -1;
             }
 
-            int bufsz = stop - (int)ReadPosition;
             byte[] tbuf = new byte[bufsz];
 
             buffer.Position = ReadPosition;
             buffer.Read(tbuf, 0, bufsz);
+
+            // for whatever reason stop - 1 fixes the read clipping the beginning of lines and missing messages
             ReadPosition = stop;
 
             outbuf = tbuf;

@@ -209,7 +209,7 @@ namespace VirtualSerial
                             byte[] outbuf;
                             read = _stopBuffer.GetMessage(stopcode, out outbuf);
                             if (read < 1) continue;
-                            message = Encoding.ASCII.GetString(outbuf, 0, read);
+                            message = "\n" + Encoding.ASCII.GetString(outbuf, 0, read);
                             break;
                         case ReadMode.LINE_BUFFERED:
                             message = _serialPort.ReadLine();
@@ -283,7 +283,47 @@ namespace VirtualSerial
         // end ownership of _ReadOpenPort Thread
 
         Regex isNumber = new Regex(@"^\d$");
+        Port GetUISettingsToPort()
+        {
 
+            int baud, parity, _databits, readtimeout, writetimeout;
+            if (!int.TryParse(this.textBoxInputBaud.Text, out baud))
+                throw new System.ArgumentException("Input Baud bad input");
+
+            //int.TryParse(this.textBoxInputParity.Text, out parity);
+            //if (!int.TryParse(this.textBoxInputDataBits.Text, out databits))
+            //    throw new System.ArgumentException("Input databits bad input");
+
+            if (!int.TryParse(this.textBoxReadTimeout.Text, out readtimeout))
+                throw new System.ArgumentException("Input read timeout bad input");
+
+            if (!int.TryParse(this.textBoxWriteTimeout.Text, out writetimeout))
+                throw new System.ArgumentException("Input write timeout bad input");
+            //int.TryParse(this.textBoxInputStopBits.Text, out stopbits);
+
+            (String s, Parity parity) combo = (((String s, Parity parity))comboBoxParity.SelectedItem);
+            (String s, StopBits stopBits) stops = (((String s, StopBits stopBits))comboBoxStopBits.SelectedItem);
+            (String s, DataBits bits) databits = (((String s, DataBits bits))comboBoxDataBit.SelectedItem);
+            
+            Port port = new Port();
+            port.BaudRate = baud;
+            port.Parity = combo.parity;
+            port.PortName = (string)this.comboBox1.SelectedValue;
+            port.DataBits = databits.bits;
+            port.StopBits = stops.stopBits;
+            port.ReadTimeout = readtimeout;
+            port.WriteTimeout = writetimeout;
+
+            return port;
+        }
+        void SetUIFromPortSettings(Port p)
+        {
+            this.textBoxInputBaud.Text = p.BaudRate.ToString();
+            this.textBoxReadTimeout.Text = p.ReadTimeout.ToString();
+            this.textBoxWriteTimeout.Text = p.WriteTimeout.ToString();
+            //this.comboBoxParity.SelectedItem = 
+            // TODO:
+        }
         int GetPortSettings(ref SerialPort port, ref State state)
         {
             //if (!isNumber.IsMatch(this.textBoxInputBaud.Text))
@@ -316,6 +356,8 @@ namespace VirtualSerial
             _serialPort.StopBits = stops.stopBits;
             _serialPort.ReadTimeout = readtimeout;
             _serialPort.WriteTimeout = writetimeout;
+
+            state.PortID = (string)this.comboBox1.SelectedValue;
             state.bits = databits.bits;
             state.readtimeout = readtimeout;
             state.writetimeout = writetimeout;
@@ -324,7 +366,7 @@ namespace VirtualSerial
             //System.Text.Encoding.GetEncoding(1252);
             return 1;
         }
-
+        State state;
         void InitPort()
         {
             toolStripStatusLabelActivity.Text = "STARTING";
@@ -338,7 +380,7 @@ namespace VirtualSerial
             // open new port
             _serialPort = new SerialPort();
 
-            State state = new State(true);
+            state = new State(true);
             // apply UI settings
             GetPortSettings(ref _serialPort, ref state);
             _serialPort.Handshake = Handshake.None;
@@ -467,8 +509,8 @@ namespace VirtualSerial
             // commit and clear buffer
             //if (!UIIgnoreTextCursorUpdate)
             //{
-                InputTextHistory.UpdateBuffer(richTextBoxInput.Text);
-                UIIgnoreTextCursorUpdate = false;
+            InputTextHistory.UpdateBuffer(richTextBoxInput.Text);
+            UIIgnoreTextCursorUpdate = false;
             //}
 
             InputTextHistory.Commit();
@@ -506,18 +548,6 @@ namespace VirtualSerial
             byte[] buf = ParseBadHexStringLiteral(richTextBoxInputHex.Text, 2);
             queueMessageWrite.Add(new Message(richTextBoxInputHex.Text, buf, Message.SendAsEncoding.ASCII));
             richTextBoxInput.Clear();
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            SaveFileDialog dlg = new SaveFileDialog();
-            dlg.ShowDialog();
-        }
-
-        private void buttonLoadPreset_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog dlg = new OpenFileDialog();
-            dlg.ShowDialog();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -590,7 +620,7 @@ namespace VirtualSerial
 
         private void richTextBoxInput_KeyPress(object sender, KeyPressEventArgs e)
         {
-            
+
         }
 
         InputHistory<string> InputTextHistory = new InputHistory<string>();
@@ -598,7 +628,7 @@ namespace VirtualSerial
 
         private void richTextBoxInput_KeyDown(object sender, KeyEventArgs e)
         {
-            switch (e.KeyCode) 
+            switch (e.KeyCode)
             {
                 case Keys.Up:
                     InputTextHistory.Back();
@@ -611,6 +641,43 @@ namespace VirtualSerial
                     UIIgnoreTextCursorUpdate = true;
                     break;
             }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.ShowDialog();
+        }
+
+        Session GetSession()
+        {
+            return new Session();
+        }
+        private void buttonLoadPreset_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.InitialDirectory = Path.GetFullPath("./configs");
+            dlg.ShowDialog();
+        }
+        private void presetToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Filter = "Config|*.cfg";
+            dlg.InitialDirectory = Path.GetFullPath("./configs");
+            dlg.ShowDialog();
+            Port p = Config.DeserializePort(File.ReadAllText(dlg.FileName));
+            SetUIFromPortSettings(p);
+        }
+
+        private void savePesetToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = "Config|*.cfg";
+            dlg.InitialDirectory = Path.GetFullPath("./configs");
+            dlg.ShowDialog();
+
+            Port p = GetUISettingsToPort();
+            File.WriteAllText(dlg.FileName, Config.SerializePort(p));
         }
     }
 }

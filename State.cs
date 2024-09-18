@@ -12,6 +12,7 @@ namespace VirtualSerial
     // copies of this are sent to threads to tell them what they need to know
     public class State
     {
+        public string PortID;
         public bool Connected;
         public DataBits bits;
         public Parity parity;
