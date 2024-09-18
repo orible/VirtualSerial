@@ -668,9 +668,11 @@ namespace VirtualSerial
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.Filter = "Config|*.cfg";
             dlg.InitialDirectory = Path.GetFullPath("./configs");
-            dlg.ShowDialog();
-            Port p = Config.DeserializePort(File.ReadAllText(dlg.FileName));
-            SetUIFromPortSettings(p);
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                Port p = Config.DeserializePort(File.ReadAllText(dlg.FileName));
+                SetUIFromPortSettings(p);
+            }
         }
 
         private void savePesetToolStripMenuItem_Click(object sender, EventArgs e)
@@ -678,10 +680,11 @@ namespace VirtualSerial
             SaveFileDialog dlg = new SaveFileDialog();
             dlg.Filter = "Config|*.cfg";
             dlg.InitialDirectory = Path.GetFullPath("./configs");
-            dlg.ShowDialog();
-
-            Port p = GetUISettingsToPort();
-            File.WriteAllText(dlg.FileName, Config.SerializePort(p));
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                Port p = GetUISettingsToPort();
+                File.WriteAllText(dlg.FileName, Config.SerializePort(p));
+            }
         }
     }
 }
