@@ -21,6 +21,7 @@ namespace VirtualSerial
 
         public int ReadTimeout { get; set; }
         public int WriteTimeout { get; set; }
+        public string StopCode { get; set; }
     }
 
     [Serializable]

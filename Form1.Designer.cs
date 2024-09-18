@@ -447,6 +447,7 @@
             buttonLoadPreset.TabIndex = 35;
             buttonLoadPreset.Text = "Load Preset";
             buttonLoadPreset.UseVisualStyleBackColor = true;
+            buttonLoadPreset.Visible = false;
             buttonLoadPreset.Click += buttonLoadPreset_Click;
             // 
             // buttonSavePreset
@@ -457,6 +458,7 @@
             buttonSavePreset.TabIndex = 36;
             buttonSavePreset.Text = "Save Preset";
             buttonSavePreset.UseVisualStyleBackColor = true;
+            buttonSavePreset.Visible = false;
             buttonSavePreset.Click += button4_Click;
             // 
             // textBoxInputBaud
@@ -616,27 +618,27 @@
             // presetToolStripMenuItem
             // 
             presetToolStripMenuItem.Name = "presetToolStripMenuItem";
-            presetToolStripMenuItem.Size = new Size(180, 22);
+            presetToolStripMenuItem.Size = new Size(142, 22);
             presetToolStripMenuItem.Text = "Load Preset";
             presetToolStripMenuItem.Click += presetToolStripMenuItem_Click;
             // 
             // savePesetToolStripMenuItem
             // 
             savePesetToolStripMenuItem.Name = "savePesetToolStripMenuItem";
-            savePesetToolStripMenuItem.Size = new Size(180, 22);
+            savePesetToolStripMenuItem.Size = new Size(142, 22);
             savePesetToolStripMenuItem.Text = "Save Preset";
             savePesetToolStripMenuItem.Click += savePesetToolStripMenuItem_Click;
             // 
             // loadSessionToolStripMenuItem
             // 
             loadSessionToolStripMenuItem.Name = "loadSessionToolStripMenuItem";
-            loadSessionToolStripMenuItem.Size = new Size(180, 22);
+            loadSessionToolStripMenuItem.Size = new Size(142, 22);
             loadSessionToolStripMenuItem.Text = "Load Session";
             // 
             // saveSessionToolStripMenuItem
             // 
             saveSessionToolStripMenuItem.Name = "saveSessionToolStripMenuItem";
-            saveSessionToolStripMenuItem.Size = new Size(180, 22);
+            saveSessionToolStripMenuItem.Size = new Size(142, 22);
             saveSessionToolStripMenuItem.Text = "Save Session";
             // 
             // groupBox4

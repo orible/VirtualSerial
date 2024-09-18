@@ -18,22 +18,22 @@ namespace VirtualSerial
         {
             InitializeComponent();
             RefreshPorts();
-            comboBoxStopBits.DataSource = new (String, StopBits)[] {
-                ("None", StopBits.None),
-                ("1", StopBits.One),
-                ("2", StopBits.Two),
-                ("1.5", StopBits.OnePointFive) };
-            comboBoxParity.DataSource = new (String, Parity)[] {
-                ("1 (Odd)", Parity.Odd),
-                ("NONE", Parity.None),
-                ("Mark", Parity.Mark),
-                ("0 (Space)", Parity.Space),
-                ("2 (Odd)", Parity.Even) };
-            comboBoxDataBit.DataSource = new (String, DataBits)[] {
-                ("5", DataBits.Five),
-                ("6", DataBits.Six),
-                ("7", DataBits.Seven),
-                ("8", DataBits.Eight)
+            comboBoxStopBits.DataSource = new StopBits[] {
+                StopBits.None,
+                StopBits.One,
+                StopBits.Two,
+                StopBits.OnePointFive };
+            comboBoxParity.DataSource = new Parity[] {
+                Parity.Odd,
+                Parity.None,
+                Parity.Mark,
+                Parity.Space,
+                Parity.Even };
+            comboBoxDataBit.DataSource = new DataBits[] {
+                DataBits.Five,
+                DataBits.Six,
+                DataBits.Seven,
+                DataBits.Eight
             };
             comboBoxDataBit.DisplayMember = "Item1";
             comboBoxHandshake.DataSource = new Handshake[] { Handshake.None, Handshake.XOnXOff, Handshake.RequestToSend, Handshake.RequestToSendXOnXOff };
@@ -286,7 +286,7 @@ namespace VirtualSerial
         Port GetUISettingsToPort()
         {
 
-            int baud, parity, _databits, readtimeout, writetimeout;
+            int baud, _databits, readtimeout, writetimeout;
             if (!int.TryParse(this.textBoxInputBaud.Text, out baud))
                 throw new System.ArgumentException("Input Baud bad input");
 
@@ -301,19 +301,19 @@ namespace VirtualSerial
                 throw new System.ArgumentException("Input write timeout bad input");
             //int.TryParse(this.textBoxInputStopBits.Text, out stopbits);
 
-            (String s, Parity parity) combo = (((String s, Parity parity))comboBoxParity.SelectedItem);
-            (String s, StopBits stopBits) stops = (((String s, StopBits stopBits))comboBoxStopBits.SelectedItem);
-            (String s, DataBits bits) databits = (((String s, DataBits bits))comboBoxDataBit.SelectedItem);
-            
+            Parity parity = (Parity)comboBoxParity.SelectedItem;
+            StopBits stops = (StopBits)comboBoxStopBits.SelectedItem;
+            DataBits databits = (DataBits)comboBoxDataBit.SelectedItem;
+
             Port port = new Port();
             port.BaudRate = baud;
-            port.Parity = combo.parity;
+            port.Parity = parity;
             port.PortName = (string)this.comboBox1.SelectedValue;
-            port.DataBits = databits.bits;
-            port.StopBits = stops.stopBits;
+            port.DataBits = databits;
+            port.StopBits = stops;
             port.ReadTimeout = readtimeout;
             port.WriteTimeout = writetimeout;
-
+            port.StopCode = this.textBoxStopCode.Text;
             return port;
         }
         void SetUIFromPortSettings(Port p)
@@ -321,7 +321,12 @@ namespace VirtualSerial
             this.textBoxInputBaud.Text = p.BaudRate.ToString();
             this.textBoxReadTimeout.Text = p.ReadTimeout.ToString();
             this.textBoxWriteTimeout.Text = p.WriteTimeout.ToString();
-            //this.comboBoxParity.SelectedItem = 
+            this.comboBox1.SelectedItem = p.PortName;
+            this.comboBoxParity.SelectedItem = p.Parity;
+            this.comboBoxDataBit.SelectedItem = p.DataBits;
+            this.comboBoxStopBits.SelectedItem = p.StopBits;
+            this.comboBoxReadMode.SelectedItem = p.BufferMode;
+            this.textBoxStopCode.Text = p.StopCode?.ToString() ?? "";
             // TODO:
         }
         int GetPortSettings(ref SerialPort port, ref State state)
@@ -329,7 +334,7 @@ namespace VirtualSerial
             //if (!isNumber.IsMatch(this.textBoxInputBaud.Text))
             //    throw new System.ArgumentException("Input Baud bad input");
 
-            int baud, parity, _databits, readtimeout, writetimeout;
+            int baud, _databits, readtimeout, writetimeout;
             if (!int.TryParse(this.textBoxInputBaud.Text, out baud))
                 throw new System.ArgumentException("Input Baud bad input");
 
@@ -344,24 +349,23 @@ namespace VirtualSerial
                 throw new System.ArgumentException("Input write timeout bad input");
             //int.TryParse(this.textBoxInputStopBits.Text, out stopbits);
 
-            (String s, Parity parity) combo = (((String s, Parity parity))comboBoxParity.SelectedItem);
-            (String s, StopBits stopBits) stops = (((String s, StopBits stopBits))comboBoxStopBits.SelectedItem);
-            (String s, DataBits bits) databits = (((String s, DataBits bits))comboBoxDataBit.SelectedItem);
+            Parity parity = (Parity)comboBoxParity.SelectedItem;
+            StopBits stops = (StopBits)comboBoxStopBits.SelectedItem;
+            DataBits databits = (DataBits)comboBoxDataBit.SelectedItem;
 
-            _serialPort.BaudRate = baud;
-            _serialPort.Parity = combo.parity;
-            _serialPort.PortName = (string)this.comboBox1.SelectedValue;
-            _serialPort.Parity = combo.parity;
-            _serialPort.DataBits = (int)databits.bits;
-            _serialPort.StopBits = stops.stopBits;
-            _serialPort.ReadTimeout = readtimeout;
-            _serialPort.WriteTimeout = writetimeout;
+            port.BaudRate = baud;
+            port.Parity = parity;
+            port.PortName = (string)this.comboBox1.SelectedValue;
+            port.DataBits = (int)databits;
+            port.StopBits = stops;
+            port.ReadTimeout = readtimeout;
+            port.WriteTimeout = writetimeout;
 
             state.PortID = (string)this.comboBox1.SelectedValue;
-            state.bits = databits.bits;
+            state.bits = databits;
             state.readtimeout = readtimeout;
             state.writetimeout = writetimeout;
-            state.parity = combo.parity;
+            state.parity = parity;
             //_serialPort.Encoding = System.Text.Encoding;
             //System.Text.Encoding.GetEncoding(1252);
             return 1;
