@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.Integration;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Serialization.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -25,91 +26,47 @@ namespace VirtualSerial
         {
             InitializeComponent();
         }
+        private void ScriptTerminal_Load(object sender, EventArgs e)
+        {
+            //var edit = new ICSharpCode.AvalonEdit.TextEditor();
 
-        private void ScriptTerminal_Load(object sender, EventArgs e) { }
+            //ElementHost host = new ElementHost();
+            //host.Dock = System.Windows.Forms.DockStyle.Fill;
+            //host.Child = edit;
+            //this.groupBox1.Controls.Add(host);
+
+        }
+        bool flagIsAttached = false;
 
         string loadedScript;
-        Script _script;
-        DynValue _fnMain;
+        VM virtualMachine = new VM();
+        BlockingCollection<Message> writeOut;
 
-        BlockingCollection<Message> messages;
-        Dictionary<string, CallbackFunction> timers;
-
-        void _Thread()
-        {
-            while (true)
-            {
-                Message msg = messages.Take();
-                Task.Delay(100);
-            }
-        }
-
-        void LoadScript()
-        {
-            Log($"[vm] compiling script...\n");
-            Script script = new Script();
-            Script.DefaultOptions.DebugPrint = s => Log(s);
-            //Script.DefaultOptions.Stderr = s => richTextBoxLog.AppendText(s);
-            DynValue fnMain = script.LoadString(GetScript());
-            script.Globals["SEND"] = (Func<string, int>)lfuncSend;
-            script.Globals["TIMER"] = (Func<string, int, int, DynValue, int>)lfuncTimer;
-            script.Globals["CONNECT"] = (Func<string, string, int, string, float, int, int, int, int>)lfuncConnect;
-            script.Globals["DISCONNECT"] = (Func<int>)lfuncDisconnect;
-            script.Globals["print"] = (Func<string, int>)lfuncPrint;
-            script.Globals["debug"] = (Func<string, int>)lfuncPrint;
-            script.Globals["WITEFILE"] = (Func<string, MoonSharp.Interpreter.Table, int>)lfuncWriteFile;
-            _fnMain = fnMain;
-            _script = script;
-        }
-
-        BlockingCollection<Message> _in;
-        BlockingCollection<Message> _out;
         public void Register(
             ref BlockingCollection<Message> _in1,
             ref BlockingCollection<Message> writeOut)
         {
-            _in = _in1;
-            _out = writeOut;
+            this.writeOut = writeOut;
         }
-        int lfuncConnect(
-            string port,
-            string buffermode,
-            int baud,
-            string parity,
-            float stop,
-            int data,
-            int readtimeout,
-            int writetimeout)
-        {
-            return -1;
-        }
-        int lfuncTimer(string name, int delay, int repeat, DynValue value)
-        {
-            value.Function.Call();
-            return -1;
-        }
-        int lfuncDisconnect()
-        {
-            return -1;
-        }
-        int lfuncWriteFile(string dir, MoonSharp.Interpreter.Table list)
-        {
-            string path = $"./output/{dir}";
-            string dirpath = Path.GetFullPath(Path.GetDirectoryName(path));
-            System.IO.Directory.CreateDirectory(dirpath);
-            File.AppendAllLines(path, new string[]{ list.TableToJson() });
-            return 1;
-        }
-        int lfuncPrint(string str)
+
+        int vmFuncPrint(string str)
         {
             Log(str);
             return 1;
         }
-        int lfuncSend(string str)
+
+        int vmFuncSend(string str)
         {
             byte[] buf = Encoding.ASCII.GetBytes(str);
-            this._out.Add(new Message(Message.MessageCode.NULL, buf, Message.SendAsEncoding.ASCII));
+            this.writeOut.Add(new Message(Message.MessageCode.NULL, buf, Message.SendAsEncoding.ASCII));
             return 0;
+        }
+
+        public void OnMessage(object sender, MessageEventArgs args)
+        {
+            if (args.Data == null || args.Data.Buf == null) return;
+            string data = Encoding.ASCII.GetString(args.Data.Buf);
+            virtualMachine.CallOnMessage(this, args);
         }
 
         State state;
@@ -120,55 +77,38 @@ namespace VirtualSerial
             runToolStripMenuItem.Enabled = _stat.Connected;
         }
 
-        public void OnMessage(object sender, MessageEventArgs args)
-        {
-            if (_script == null) return;
-            if (args.Data == null || args.Data.Buf == null) return;
-            string data = Encoding.ASCII.GetString(args.Data.Buf);
-            try
-            {
-                var fn = _script.Globals["OnReceive"];
-                if (fn == null) return;
-                _script.Call(fn, data);
-            }
-            catch (Exception e)
-            {
-                Error(e.Message);
-            }
-        }
-
-        bool FlagScriptChanged = false;
-        bool FlagScriptSaved = false;
-
-        void Error(string s)
+        void ShowError(string s)
         {
             Log("ERROR: " + s);
         }
+
         void Log(string s)
         {
             this.richTextBoxLog.AppendText(s);
             this.richTextBoxLog.ScrollToCaret();
         }
 
+        bool FlagScriptChanged = false;
+        bool FlagScriptSaved = false;
+
         private void compileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             try
             {
-                LoadScript();
+                virtualMachine.SetScript(this.richTextBoxScriptInput.Text);
+                virtualMachine.Compile();
             }
             catch (Exception ex)
             {
-                Error($"fatal: {ex.Message}\n");
+                ShowError($"fatal: {ex.Message}\n");
             }
         }
+
         void TryRecompile()
         {
             if (!FlagScriptChanged) return;
-            LoadScript();
-        }
-        string GetScript()
-        {
-            return this.richTextBoxScriptInput.Text;
+            virtualMachine.SetScript(this.richTextBoxScriptInput.Text);
+            virtualMachine.Compile();
         }
 
         private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
@@ -189,12 +129,12 @@ namespace VirtualSerial
             try
             {
                 TryRecompile();
-                _fnMain.Function.Call();
+                virtualMachine.Run();
                 Log("\n");
             }
             catch (Exception ex)
             {
-                Error($"fatal: {ex.Message}\n");
+                ShowError($"fatal: {ex.Message}\n");
             }
         }
 
@@ -232,10 +172,10 @@ namespace VirtualSerial
 
         private void testToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this._out.Add(new Message("__TEST__", new byte[] { 49, 49 }, Message.SendAsEncoding.ASCII));
+            // send test message
+            this.writeOut.Add(new Message("__TEST__", new byte[] { 49, 49 }, Message.SendAsEncoding.ASCII));
         }
 
-        bool flagIsAttached = false;
         private void attachToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // classic flipflop :)
@@ -247,8 +187,13 @@ namespace VirtualSerial
         {
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.S)
             {
-               saveToolStripMenuItem_Click(sender, e);
+                saveToolStripMenuItem_Click(sender, e);
             }
+        }
+
+        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
         }
     }
 }

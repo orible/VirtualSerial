@@ -20,7 +20,7 @@ namespace VirtualSerial
         private DynValue fnMain;
         
         // callback timers
-        Dictionary<string, DynValue> timers;
+        Dictionary<string, Timer> timers;
         
         // in and out messages
         BlockingCollection<Message> _in;
@@ -33,7 +33,8 @@ namespace VirtualSerial
         {
             foreach(var e in timers)
             {
-                e.Value.Function.Call();
+                // tick all timers
+                e.Value.Func.Function.Call();
             }
         }
         void _Thread(object ctx)
@@ -59,6 +60,13 @@ namespace VirtualSerial
             FNDISCONNECT = 11,
             FNWRITEFILE = 12,
         }
+        public class Timer
+        {
+            public int Delay;
+            public int Repeat;
+            public int LastCall;
+            public DynValue Func;
+        }
         public class VMEvent
         {
             public VMEventCodeEnum Code;
@@ -70,7 +78,11 @@ namespace VirtualSerial
 
         public void SetScript(string buffer)
         {
-
+            bufferedScript = buffer;
+        }
+        public void Run()
+        {
+            fnMain.Function.Call();
         }
         public void Compile()
         {

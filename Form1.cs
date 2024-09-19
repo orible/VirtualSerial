@@ -1,4 +1,4 @@
-using Microsoft.Win32;
+using Win32 = Microsoft.Win32;
 using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
