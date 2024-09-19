@@ -19,31 +19,28 @@ namespace VirtualSerial
 {
     public partial class ScriptTerminal : Form
     {
+        public string GUID = Guid.NewGuid().ToString();
+
         public ScriptTerminal()
         {
             InitializeComponent();
         }
 
-        private void ScriptTerminal_Load(object sender, EventArgs e)
-        {
+        private void ScriptTerminal_Load(object sender, EventArgs e) { }
 
-        }
-
-        public string GUID = Guid.NewGuid().ToString();
-
+        string loadedScript;
         Script _script;
         DynValue _fnMain;
 
-        string loadedScript;
-
         BlockingCollection<Message> messages;
+        Dictionary<string, CallbackFunction> timers;
 
         void _Thread()
         {
             while (true)
             {
                 Message msg = messages.Take();
-
+                Task.Delay(100);
             }
         }
 
@@ -54,12 +51,13 @@ namespace VirtualSerial
             Script.DefaultOptions.DebugPrint = s => Log(s);
             //Script.DefaultOptions.Stderr = s => richTextBoxLog.AppendText(s);
             DynValue fnMain = script.LoadString(GetScript());
-            script.Globals["send"] = (Func<string, int>)lfuncSend;
-            script.Globals["connect"] = (Func<int, string, float, int, int, int, int>)lfuncConnect;
-            script.Globals["disconnect"] = (Func<string, int>)lfuncSend;
+            script.Globals["SEND"] = (Func<string, int>)lfuncSend;
+            script.Globals["TIMER"] = (Func<string, int, int, DynValue, int>)lfuncTimer;
+            script.Globals["CONNECT"] = (Func<string, string, int, string, float, int, int, int, int>)lfuncConnect;
+            script.Globals["DISCONNECT"] = (Func<int>)lfuncDisconnect;
             script.Globals["print"] = (Func<string, int>)lfuncPrint;
             script.Globals["debug"] = (Func<string, int>)lfuncPrint;
-            script.Globals["writeout"] = (Func<string, MoonSharp.Interpreter.Table, int>)lfuncWriteFile;
+            script.Globals["WITEFILE"] = (Func<string, MoonSharp.Interpreter.Table, int>)lfuncWriteFile;
             _fnMain = fnMain;
             _script = script;
         }
@@ -74,6 +72,8 @@ namespace VirtualSerial
             _out = writeOut;
         }
         int lfuncConnect(
+            string port,
+            string buffermode,
             int baud,
             string parity,
             float stop,
@@ -81,6 +81,11 @@ namespace VirtualSerial
             int readtimeout,
             int writetimeout)
         {
+            return -1;
+        }
+        int lfuncTimer(string name, int delay, int repeat, DynValue value)
+        {
+            value.Function.Call();
             return -1;
         }
         int lfuncDisconnect()
@@ -175,12 +180,6 @@ namespace VirtualSerial
             {
                 FlagScriptSaved = true;
                 File.WriteAllText(dlg.FileName, this.richTextBoxScriptInput.Text);
-                //using (Stream stream = dlg.OpenFile())
-                //using (StreamWriter sw = new StreamWriter(stream))
-                //{
-                //    sw.Write(this.richTextBox1.Text);
-                //    sw.Flush();
-                //}
             }
         }
 
