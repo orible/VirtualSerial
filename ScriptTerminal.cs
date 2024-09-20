@@ -29,7 +29,6 @@ namespace VirtualSerial
         private void ScriptTerminal_Load(object sender, EventArgs e)
         {
             //var edit = new ICSharpCode.AvalonEdit.TextEditor();
-
             //ElementHost host = new ElementHost();
             //host.Dock = System.Windows.Forms.DockStyle.Fill;
             //host.Child = edit;
