@@ -236,7 +236,6 @@
             richTextBoxInput.TabIndex = 24;
             richTextBoxInput.TextChanged += richTextBoxInput_TextChanged;
             richTextBoxInput.KeyDown += richTextBoxInput_KeyDown;
-            richTextBoxInput.KeyPress += richTextBoxInput_KeyPress;
             // 
             // buttonInputHexSend
             // 

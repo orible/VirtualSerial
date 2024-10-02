@@ -67,6 +67,7 @@ namespace VirtualSerial
         }
 
         BindingList<String> ports;
+        private static Mutex mutVmList = new Mutex();
         Dictionary<string, VM> scripts = new Dictionary<string, VM>();
 
         private void RefreshPorts()
@@ -135,6 +136,7 @@ namespace VirtualSerial
             }
 
             richTextBoxInputLog.Invoke(() => { richTextBoxInputLog.AppendText("[Thread] Signalling read to stop...\n"); });
+            
             // shut down read thread
             queueMessageRead.Add(new Message(Message.MessageCode.STOP));
 
@@ -223,7 +225,6 @@ namespace VirtualSerial
                         default:
                             this.richTextBoxOutputLog.Invoke(() => richTextBoxOutputLog.AppendText("error: no buffer mode selected, discarding buffer"));
                             continue;
-                            break;
                     }
 
                     string timecode = GetTimecode(DateTime.Now);
@@ -238,15 +239,19 @@ namespace VirtualSerial
                         richTextBoxOutputLog.AppendText(data);
                         richTextBoxOutputLog.ScrollToCaret();
                     }, message, timecode);
-
+                    mutVmList.WaitOne();
                     foreach (var kv in this.scripts)
                     {
+                        // invoked in the VM thread context - guaranteed to be a FIFO queue
                         kv.Value.Invoke((vm, ctx) =>
                         {
-                            vm.Call("REGISTER_RECEIVE_LINE", message);
-                        }, message);
+                            var readMode = ctx[1];
+                            var message = ctx[0];
+                            vm.Call("RECEIVE", message);
+                        }, message, readMode);
                     }
-                    ListenersEmitMessage(new Message(Message.MessageCode.READ, buf));
+                    mutVmList.ReleaseMutex();
+                    //ListenersEmitMessage(new Message(Message.MessageCode.READ, buf));
                 }
                 catch (Exception e)
                 {
@@ -266,14 +271,13 @@ namespace VirtualSerial
                 }
             }
 
+            // signal writer to stop
             queueMessageWrite.Add(new Message(Message.MessageCode.STOP));
 
             labelProg2.Invoke(() => labelProg2.Text = "Shutting down...");
-
             richTextBoxOutputLog.Invoke(() => { richTextBoxOutputLog.AppendText("\n[Thread] Shutdown signal...\n"); });
-
-            _serialPort.Close();
-
+           
+            // empty input thread
             while (true)
             {
                 Message itm;
@@ -281,12 +285,21 @@ namespace VirtualSerial
                     break;
             }
 
-            this.BeginInvoke(() => { this.buttonConnect.Enabled = true; this.buttonDisconnect.Enabled = false; });
+            // close port
+            _serialPort.Close();
+            this.BeginInvoke(() => { 
+                this.buttonConnect.Enabled = true;
+                this.buttonDisconnect.Enabled = false;
+                richTextBoxOutputLog.AppendText("[Thread] Stopped\n");
+                labelProg2.Text = "Not connected";
+            });
 
-            richTextBoxOutputLog.Invoke(() => { richTextBoxOutputLog.AppendText("[Thread] Stopped\n"); labelProg2.Text = "Not connected"; });
             ReadThreadRunning = false;
 
-            ListenersEmitServiceStatus(new State(false));
+            initState.IsWriteRunning = WriteThreadRunning;
+            initState.IsReadRunning = ReadThreadRunning;
+
+            ListenersEmitServiceStatus(initState);
         }
         // end ownership of _ReadOpenPort Thread
         public ScriptTerminal GetActiveScript()
@@ -296,21 +309,15 @@ namespace VirtualSerial
         Regex isNumber = new Regex(@"^\d$");
         Port GetUISettingsToPort()
         {
-
             int baud, _databits, readtimeout, writetimeout;
             if (!int.TryParse(this.textBoxInputBaud.Text, out baud))
                 throw new System.ArgumentException("Input Baud bad input");
-
-            //int.TryParse(this.textBoxInputParity.Text, out parity);
-            //if (!int.TryParse(this.textBoxInputDataBits.Text, out databits))
-            //    throw new System.ArgumentException("Input databits bad input");
 
             if (!int.TryParse(this.textBoxReadTimeout.Text, out readtimeout))
                 throw new System.ArgumentException("Input read timeout bad input");
 
             if (!int.TryParse(this.textBoxWriteTimeout.Text, out writetimeout))
                 throw new System.ArgumentException("Input write timeout bad input");
-            //int.TryParse(this.textBoxInputStopBits.Text, out stopbits);
 
             Parity parity = (Parity)comboBoxParity.SelectedItem;
             StopBits stops = (StopBits)comboBoxStopBits.SelectedItem;
@@ -342,23 +349,15 @@ namespace VirtualSerial
         }
         int GetPortSettings(ref SerialPort port, ref State state)
         {
-            //if (!isNumber.IsMatch(this.textBoxInputBaud.Text))
-            //    throw new System.ArgumentException("Input Baud bad input");
-
             int baud, _databits, readtimeout, writetimeout;
             if (!int.TryParse(this.textBoxInputBaud.Text, out baud))
                 throw new System.ArgumentException("Input Baud bad input");
-
-            //int.TryParse(this.textBoxInputParity.Text, out parity);
-            //if (!int.TryParse(this.textBoxInputDataBits.Text, out databits))
-            //    throw new System.ArgumentException("Input databits bad input");
 
             if (!int.TryParse(this.textBoxReadTimeout.Text, out readtimeout))
                 throw new System.ArgumentException("Input read timeout bad input");
 
             if (!int.TryParse(this.textBoxWriteTimeout.Text, out writetimeout))
                 throw new System.ArgumentException("Input write timeout bad input");
-            //int.TryParse(this.textBoxInputStopBits.Text, out stopbits);
 
             Parity parity = (Parity)comboBoxParity.SelectedItem;
             StopBits stops = (StopBits)comboBoxStopBits.SelectedItem;
@@ -377,11 +376,11 @@ namespace VirtualSerial
             state.readtimeout = readtimeout;
             state.writetimeout = writetimeout;
             state.parity = parity;
-            //_serialPort.Encoding = System.Text.Encoding;
-            //System.Text.Encoding.GetEncoding(1252);
             return 1;
         }
-        State state;
+
+        State state = new State(false);
+
         void InitPort()
         {
             toolStripStatusLabelActivity.Text = "STARTING";
@@ -395,7 +394,7 @@ namespace VirtualSerial
             // open new port
             _serialPort = new SerialPort();
 
-            state = new State(true);
+            //state = new State(true);
             // apply UI settings
             GetPortSettings(ref _serialPort, ref state);
             _serialPort.Handshake = Handshake.None;
@@ -403,7 +402,7 @@ namespace VirtualSerial
             // open threads and start port
             _serialPort.Open();
 
-
+            state.Connected = true;
             state.buffermode = (ReadMode)comboBoxReadMode.SelectedItem;
             readThread.Start(state);
             writeThread.Start(state);
@@ -570,6 +569,7 @@ namespace VirtualSerial
             richTextBoxInput.AppendText("\r");
         }
 
+        private static Mutex mutUITermList = new Mutex();
         // UI table of child script windows
         List<ScriptTerminal> UITermList = new List<ScriptTerminal>();
 
@@ -585,26 +585,18 @@ namespace VirtualSerial
         public delegate void MessageEventHandler(object sender, MessageEventArgs e);
         public event MessageEventHandler TerminalEventMsgOut;
 
-        // emit messages to child windows on their UI thread :)
-        private void ListenersEmitMessage(Message msg)
-        {
-            foreach (var e in UITermList)
-            {
-                //e.OnMessage(this, new MessageEventArgs(msg));
-                //e.Invoke(() => e.OnMessage(this, new MessageEventArgs(msg)));
-            }
-        }
-
         // emit service control status
-        private void ListenersEmitServiceStatus(State _stat)
+        private void ListenersEmitServiceStatus(State state)
         {
+            mutUITermList.WaitOne();
             foreach (var e in UITermList)
             {
-                e.Invoke(() => e.OnStateUpdate(this, _stat));
+                e.Invoke(() => e.OnStateUpdate(this, state));
             }
+            mutUITermList.ReleaseMutex();
         }
 
-        void ChildTermFormClosed(object sender, FormClosedEventArgs e)
+        void ChildTermFormClosed_Event(object sender, FormClosedEventArgs e)
         {
             ScriptTerminal inst = (ScriptTerminal)sender;
             UITermList.RemoveAll((e) => e.GUID == inst.GUID);
@@ -613,17 +605,24 @@ namespace VirtualSerial
         private void button2_Click(object sender, EventArgs e)
         {
             var vm = new VM();
+            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = ReadMode.RAW; });
+            vm.RegisterFunctionInvokeListener("SEND", (vm, ctx) => { queueMessageWrite.Add(new Message(Message.MessageCode.WRITE, (byte[])ctx[0], Message.SendAsEncoding.ASCII)); });
+
             ScriptTerminal term = new ScriptTerminal();
             term.SetVM(vm);
+            
             var uid = Guid.NewGuid().ToString();
+
+            mutVmList.WaitOne();
             scripts[uid] = vm;
+            mutVmList.ReleaseMutex();
 
             //term.Register(ref queueMessageScriptInput, ref queueMessageWrite);
-            term.FormClosed += new FormClosedEventHandler(ChildTermFormClosed);
+            term.FormClosed += new FormClosedEventHandler(ChildTermFormClosed_Event);
             UITermList.Add(term);
             term.Show();
             term.OnStateUpdate(this, new State(WriteThreadRunning || ReadThreadRunning));
-            //ListenersEmitServiceStatus(new State(WriteThreadRunning || ReadThreadRunning));
+            ListenersEmitServiceStatus(state);
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e) => this.buttonDisconnect_Click(sender, e);
@@ -636,9 +635,6 @@ namespace VirtualSerial
             darkModeToolStripMenuItem.Text = UIColorScheme ? "Light Mode" : "Dark Mode";
             ColourScheme.ChangeTheme(UIColorScheme ? ColourScheme.dark : themeData, this);
         }
-
-        private void richTextBoxInput_KeyPress(object sender, KeyPressEventArgs e)
-        { }
 
         InputHistory<string> InputTextHistory = new InputHistory<string>();
         bool UIIgnoreTextCursorUpdate = false;

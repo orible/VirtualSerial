@@ -34,7 +34,7 @@ namespace VirtualSerial
         public void SetVM(VM vmRef)
         {
             this.vm = vmRef;
-            this.vm.ListenFunctionInvoke("connect", ScriptEvent);
+            this.vm.RegisterFunctionInvokeListener("connect", ScriptEvent);
         }
 
         void ScriptEvent(VM a, object[] args)

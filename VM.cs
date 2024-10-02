@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Interop;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static VirtualSerial.Form1;
 
 namespace VirtualSerial
@@ -22,14 +24,17 @@ namespace VirtualSerial
 
         // callback timers
         Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
-        Dictionary<string, VMFuncInvoke> eventCallbacks = new Dictionary<string, VMFuncInvoke>();
-        //List<VMInvokes> invokes = new VMInvokes();
+        Dictionary<string, VMFuncInvoke> invokeCallbacks = new Dictionary<string, VMFuncInvoke>();
+        Dictionary<string, VMHooks> hookListeners = new Dictionary<string, VMHooks>();
 
         // in and out messages
         BlockingCollection<VMMessage> _in = new BlockingCollection<VMMessage>();
         BlockingCollection<VMMessage> _out = new BlockingCollection<VMMessage>();
 
+        // tokens
         CancellationTokenSource cancelToken = new();
+        
+        // status
         volatile bool ThreadIsRunning = false, IsDisposed = false;
 
         void _DoMessage(VMMessage msg)
@@ -39,12 +44,21 @@ namespace VirtualSerial
                 case VMMESSAGE.CALLFUNC:
                     {
                         VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
+                        // get global function and execute it
                         string fnc = call.Call;
                         var fn = lScript.Globals[fnc];
                         lScript.Call(fn, call.args);
+                        //CallRegistrations(fnc);
                     }
                     break;
-                case VMMESSAGE.CALLBACK:
+                case VMMESSAGE.CALLHOOK:
+                    {
+                        // get registered hook and execute functions matching filter
+                        object [] call = ((object[])msg.Data);
+                        _callHooks((string)call[0], call[1]);
+                    }
+                    break;
+                case VMMESSAGE.DELEGATE:
                     {
                         VMDelegate call = ((VMDelegate)msg.Data);
                         call.Func.Invoke(this, call.Args);
@@ -52,10 +66,19 @@ namespace VirtualSerial
                     break;
             }
         }
+        private void SendMessage(VMMessage data)
+        {
+            this._in.Add(data);
+        }
+        // loop registrations
+        void _CallRegistrations(string func)
+        {
 
+        }
         // tick VM thread until signalled to stop
         void _Thread(object ctx)
         {
+            Settings settings = (Settings)ctx;
             while (!cancelToken.IsCancellationRequested)
             {
                 VMMessage item;
@@ -68,12 +91,12 @@ namespace VirtualSerial
                 _Tick();
             }
         }
-
         void _Tick()
         {
+            // tick all timers
             foreach (var e in timers)
             {
-                // tick all timers
+                e.Value.LastCall = DateTime.Now;
                 e.Value.Func.Function.Call();
             }
         }
@@ -83,8 +106,9 @@ namespace VirtualSerial
             STOP = 0,
             START = 1,
             CALLFUNC = 2,
+            DELEGATE = 5,
             RECOMPILE_SCRIPT = 3,
-            CALLBACK = 4,
+            CALLHOOK = 4,
         }
         class Settings
         {
@@ -101,10 +125,6 @@ namespace VirtualSerial
                 Ops = settings;
             }
         }
-        //public class VMCallback {
-        //    public Action<VM> Callback;
-        //    public object [] Args;
-        //}
         public class VMMessageFuncCall
         {
             public string Call;
@@ -131,6 +151,11 @@ namespace VirtualSerial
         public class VMMessage {
             public VMMESSAGE Code;
             public object Data;
+            public VMMessage(VMMESSAGE Code, params object [] Data)
+            {
+                this.Code = Code;
+                this.Data = Data;
+            }
         }
         public class VMArgs
         {
@@ -160,6 +185,16 @@ namespace VirtualSerial
                 this.Args = Args;
             }
         }
+        private class VMHooks
+        {
+            public DynValue Func;
+            public object[] Args;
+            public VMHooks(DynValue Func, object[] Args)
+            {
+                this.Func = Func;
+                this.Args = Args;
+            }
+        }
         public class Callback
         {
             public string UID;
@@ -167,7 +202,6 @@ namespace VirtualSerial
             public Callback()
             {
                 UID = Guid.NewGuid().ToString();
-                
             }
         }
         public class Timer: Callback
@@ -175,7 +209,7 @@ namespace VirtualSerial
             public DynValue Func;
             public int Delay;
             public int Repeat;
-            public int LastCall;
+            public DateTime LastCall;
             public Timer(DynValue Func) : base()
             {
                 this.Func = Func;
@@ -199,12 +233,12 @@ namespace VirtualSerial
             vmScript.Globals["TIMER"] = (Func<string, int, int, DynValue, int>)lfuncAddTimer;
             vmScript.Globals["REMOVETIMER"] = (Func<string, int>)lfuncRemoveTimer;
             vmScript.Globals["SETBUFFER"] = (Func<string, string, int>)lfuncSetBuffer;
-            vmScript.Globals["REGISTER_REEIVE"] = (Func<string, DynValue, int>)lfuncReceiveHook;
+            vmScript.Globals["REGISTER"] = (Func<string, DynValue, int>)lfuncRegisterHook;
             vmScript.Globals["REGISTER_RECEIVE_LINE"] = (Func<string, DynValue, int>)lfuncReceiveHook;
             vmScript.Globals["CONNECT"] = (Func<string, string, int, string, float, int, int, int, int>)lfuncConnect;
             vmScript.Globals["DISCONNECT"] = (Func<int>)lfuncDisconnect;
-            vmScript.Globals["print"] = (Func<string, int>)lfuncPrint;
-            vmScript.Globals["debug"] = (Func<string, int>)lfuncPrint;
+            vmScript.Globals["PRINT"] = (Func<string, int>)lfuncPrint;
+            vmScript.Globals["DEBUG"] = (Func<string, int>)lfuncPrint;
             vmScript.Globals["WITEFILE"] = (Func<string, MoonSharp.Interpreter.Table, int>)lfuncWriteFile;
             vmScript.Globals["SETTICKRATE"] = (Func<int, int>)lfuncTickRate;
         }
@@ -257,6 +291,10 @@ namespace VirtualSerial
             // set buffer mode
             return -1;
         }
+        private int lfuncRegisterHook(string func, DynValue val)
+        {
+            return -1;
+        }
         private int lfuncTickRate(int tickrate)
         {
             settings.TickRate = tickrate;
@@ -277,6 +315,7 @@ namespace VirtualSerial
         }
         private int lfuncDisconnect()
         {
+            CallListeners("disconnect");
             return -1;
         }
         private int lfuncRemoveTimer(string name)
@@ -302,19 +341,18 @@ namespace VirtualSerial
         }
         private int lfuncPrint(string str)
         {
-            EventHandler.Invoke(this, new VMEvent(VMEventCodeEnum.PRINT, str));
+            CallListeners("PRINT", new VMEvent(VMEventCodeEnum.PRINT, str));
             return 1;
         }
         private int lfuncSend(string str)
         {
             byte[] buf = Encoding.ASCII.GetBytes(str);
-            //this._out.Add(new Message(Message.MessageCode.NULL, buf, Message.SendAsEncoding.ASCII));
-            CallListeners("send", str);
+            CallListeners("SEND", buf);
             return 0;
         }
         private void CallListeners(string filter, params object[] args)
         {
-            foreach(var cb in this.eventCallbacks)
+            foreach(var cb in this.invokeCallbacks)
             {
                 if (cb.Value.Filter.StartsWith(filter))
                 {
@@ -322,13 +360,13 @@ namespace VirtualSerial
                 }
             }
         }
-
         // attaches a invoke callback and returns the callback ID
-        public string ListenFunctionInvoke(string FunctionFilter, Action<VM, object[]> action, params object[] ctx)
+        // all function names are unique and upper case
+        public string RegisterFunctionInvokeListener(string FunctionFilter, Action<VM, object[]> action, params object[] ctx)
         {
-            var filter = FunctionFilter.ToLower();
+            var filter = FunctionFilter.ToUpper();
             var invoke = new VMFuncInvoke(action, filter);
-            eventCallbacks.Add(invoke.UID, invoke);
+            invokeCallbacks.Add(invoke.UID, invoke);
             return invoke.UID;
         }
         public void Invoke(Action<VM, object[]> action, params object[] args)
@@ -338,39 +376,51 @@ namespace VirtualSerial
                 action.Invoke(this, args);
                 return;
             }
-
-            var ev = new VMMessage();
-            ev.Code = VMMESSAGE.CALLBACK;
-            var vm = new VMDelegate(action, args);
-            ev.Data = vm;
-            this._in.Add(ev);
-        }
-        private void Call(object sender, VMMessage msg)
-        {
-            var m = new VMMessage();
-            m.Code = VMMESSAGE.CALLFUNC;
-
-            if (IsRunningThreaded())
-            {
-                // defer to caller
-                this._in.Prepend(msg);
-                return;
-            }
-            // immediate exectution
-            VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
-            lScript.Call(call.Call, call.args);
+            SendMessage(new VMMessage(VMMESSAGE.DELEGATE, new VMDelegate(action, args)));
         }
         public  void CallList(object sender, string[] functions, VMArgs args)
         {
 
         }
-        // call will execute the specified script
-        public void Call(string function, params object[] args)
+        public void CallRegisterCallback(string function, params object[] args)
         {
-            if (!IsCompiled()) return;// throw Exception("Not Compiled");
+
+        }
+        private void _call(string function, params object[] args)
+        {
             var fn = this.lScript.Globals[function];
             if (fn == null) return;
             lScript.Call(fn, args);
+        }
+        private void _callHooks(string filter, params object[] args)
+        {
+            foreach (var e in hookListeners)
+            {
+                e.Value.Func.Function.Call(args);
+            }
+        }
+        public void CallHook(string hookfilter, params object[] args)
+        {
+            hookfilter = hookfilter.ToUpper();
+            if (!IsCompiled()) return;
+            if (IsRunningThreaded())
+            {
+                SendMessage(new VMMessage(VMMESSAGE.CALLHOOK, hookfilter, args));
+                return;
+            } 
+            _callHooks(hookfilter, args);
+        }
+        // call will execute the specified script
+        public void Call(string function, params object[] args)
+        {
+            function = function.ToUpper();
+            if (!IsCompiled()) return;
+            if (IsRunningThreaded())
+            {
+                SendMessage(new VMMessage(VMMESSAGE.CALLFUNC, function, args));
+                return;
+            }
+            _call(function, args);
         }
     }
 }
