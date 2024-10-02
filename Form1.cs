@@ -67,6 +67,7 @@ namespace VirtualSerial
         }
 
         BindingList<String> ports;
+        Dictionary<string, VM> scripts = new Dictionary<string, VM>();
 
         private void RefreshPorts()
         {
@@ -238,7 +239,14 @@ namespace VirtualSerial
                         richTextBoxOutputLog.ScrollToCaret();
                     }, message, timecode);
 
-                    ListenersEmitMessage(new Message(buf));
+                    foreach (var kv in this.scripts)
+                    {
+                        kv.Value.Invoke((vm, ctx) =>
+                        {
+                            vm.Call("REGISTER_RECEIVE_LINE", message);
+                        }, message);
+                    }
+                    ListenersEmitMessage(new Message(Message.MessageCode.READ, buf));
                 }
                 catch (Exception e)
                 {
@@ -281,7 +289,10 @@ namespace VirtualSerial
             ListenersEmitServiceStatus(new State(false));
         }
         // end ownership of _ReadOpenPort Thread
-
+        public ScriptTerminal GetActiveScript()
+        {
+            return this.UITermList.First();
+        }
         Regex isNumber = new Regex(@"^\d$");
         Port GetUISettingsToPort()
         {
@@ -579,7 +590,8 @@ namespace VirtualSerial
         {
             foreach (var e in UITermList)
             {
-                e.Invoke(() => e.OnMessage(this, new MessageEventArgs(msg)));
+                //e.OnMessage(this, new MessageEventArgs(msg));
+                //e.Invoke(() => e.OnMessage(this, new MessageEventArgs(msg)));
             }
         }
 
@@ -600,16 +612,19 @@ namespace VirtualSerial
 
         private void button2_Click(object sender, EventArgs e)
         {
+            var vm = new VM();
             ScriptTerminal term = new ScriptTerminal();
-            term.Register(ref queueMessageScriptInput, ref queueMessageWrite);
+            term.SetVM(vm);
+            var uid = Guid.NewGuid().ToString();
+            scripts[uid] = vm;
+
+            //term.Register(ref queueMessageScriptInput, ref queueMessageWrite);
             term.FormClosed += new FormClosedEventHandler(ChildTermFormClosed);
             UITermList.Add(term);
             term.Show();
             term.OnStateUpdate(this, new State(WriteThreadRunning || ReadThreadRunning));
             //ListenersEmitServiceStatus(new State(WriteThreadRunning || ReadThreadRunning));
         }
-
-        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e) { }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e) => this.buttonDisconnect_Click(sender, e);
 
@@ -623,9 +638,7 @@ namespace VirtualSerial
         }
 
         private void richTextBoxInput_KeyPress(object sender, KeyPressEventArgs e)
-        {
-
-        }
+        { }
 
         InputHistory<string> InputTextHistory = new InputHistory<string>();
         bool UIIgnoreTextCursorUpdate = false;

@@ -21,6 +21,7 @@ namespace VirtualSerial
     public partial class ScriptTerminal : Form
     {
         public string GUID = Guid.NewGuid().ToString();
+        VM vm;
 
         public ScriptTerminal()
         {
@@ -28,57 +29,35 @@ namespace VirtualSerial
         }
         private void ScriptTerminal_Load(object sender, EventArgs e)
         {
-            //var edit = new ICSharpCode.AvalonEdit.TextEditor();
-            //ElementHost host = new ElementHost();
-            //host.Dock = System.Windows.Forms.DockStyle.Fill;
-            //host.Child = edit;
-            //this.groupBox1.Controls.Add(host);
 
         }
-        bool flagIsAttached = false;
+        public void SetVM(VM vmRef)
+        {
+            this.vm = vmRef;
+            this.vm.ListenFunctionInvoke("connect", ScriptEvent);
+        }
 
+        void ScriptEvent(VM a, object[] args)
+        {
+
+        }
+
+        void Error(string s)
+        {
+            Log("ERROR: " + s);
+        }
+
+        bool FlagScriptChanged = false;
+        bool FlagScriptSaved = false;
+        bool FlagScriptIsAttached = false;
         string loadedScript;
-        VM virtualMachine = new VM();
-        BlockingCollection<Message> writeOut;
-
-        public void Register(
-            ref BlockingCollection<Message> _in1,
-            ref BlockingCollection<Message> writeOut)
-        {
-            this.writeOut = writeOut;
-        }
-
-        int vmFuncPrint(string str)
-        {
-            Log(str);
-            return 1;
-        }
-
-        int vmFuncSend(string str)
-        {
-            byte[] buf = Encoding.ASCII.GetBytes(str);
-            this.writeOut.Add(new Message(Message.MessageCode.NULL, buf, Message.SendAsEncoding.ASCII));
-            return 0;
-        }
-
-        public void OnMessage(object sender, MessageEventArgs args)
-        {
-            if (args.Data == null || args.Data.Buf == null) return;
-            string data = Encoding.ASCII.GetString(args.Data.Buf);
-            virtualMachine.CallOnMessage(this, args);
-        }
 
         State state;
         public void OnStateUpdate(object sender, State _stat)
         {
             state = _stat;
-            flagIsAttached = _stat.Connected;
+            FlagScriptIsAttached = _stat.Connected;
             runToolStripMenuItem.Enabled = _stat.Connected;
-        }
-
-        void ShowError(string s)
-        {
-            Log("ERROR: " + s);
         }
 
         void Log(string s)
@@ -87,27 +66,12 @@ namespace VirtualSerial
             this.richTextBoxLog.ScrollToCaret();
         }
 
-        bool FlagScriptChanged = false;
-        bool FlagScriptSaved = false;
-
         private void compileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            try
-            {
-                virtualMachine.SetScript(this.richTextBoxScriptInput.Text);
-                virtualMachine.Compile();
-            }
-            catch (Exception ex)
-            {
-                ShowError($"fatal: {ex.Message}\n");
-            }
-        }
-
-        void TryRecompile()
-        {
-            if (!FlagScriptChanged) return;
-            virtualMachine.SetScript(this.richTextBoxScriptInput.Text);
-            virtualMachine.Compile();
+            vm.Invoke((vm, args) => {
+                vm.SetScript(this.richTextBoxScriptInput.Text);
+                vm.Compile();
+            });
         }
 
         private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
@@ -122,19 +86,17 @@ namespace VirtualSerial
             }
         }
 
-        private void rUNToolStripMenuItem_Click(object sender, EventArgs e)
+        private void runToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Log($"[vm] running script...\n");
-            try
+            vm.Invoke((vm, args) =>
             {
-                TryRecompile();
-                virtualMachine.Run();
-                Log("\n");
-            }
-            catch (Exception ex)
-            {
-                ShowError($"fatal: {ex.Message}\n");
-            }
+                vm.SetScript(this.richTextBoxScriptInput.Text);
+                vm.Compile();
+                vm.RunAsThreaded();
+                this.Invoke(() => Log("Compiled"));
+            });
+            Log("\n");
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -155,30 +117,21 @@ namespace VirtualSerial
         void UpdateTitle()
         {
             if (loadedScript == null || loadedScript.Length < 1)
-                this.Text = "LScripter";
+                this.Text = "LScripter | {no script loaded}";
 
             this.Text = $"LScripter | {loadedScript} {(!FlagScriptSaved ? "[Unsaved]" : "")}";
         }
 
         private void richTextBoxScriptInput_TextChanged(object sender, EventArgs e)
         {
-            if (!FlagScriptChanged)
-            {
-                UpdateTitle();
-            }
+            UpdateTitle();
             FlagScriptChanged = true;
-        }
-
-        private void testToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // send test message
-            this.writeOut.Add(new Message("__TEST__", new byte[] { 49, 49 }, Message.SendAsEncoding.ASCII));
         }
 
         private void attachToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // classic flipflop :)
-            flagIsAttached = !flagIsAttached;
+            FlagScriptIsAttached = !FlagScriptIsAttached;
             attachToolStripMenuItem.Text = state.Connected ? "Detach" : "Attach";
         }
 
@@ -190,9 +143,5 @@ namespace VirtualSerial
             }
         }
 
-        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
     }
 }

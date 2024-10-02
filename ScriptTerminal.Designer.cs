@@ -62,7 +62,6 @@
             menuStrip1.Size = new Size(800, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
-            menuStrip1.ItemClicked += menuStrip1_ItemClicked;
             // 
             // fileToolStripMenuItem
             // 
@@ -97,7 +96,7 @@
             runToolStripMenuItem.Name = "runToolStripMenuItem";
             runToolStripMenuItem.Size = new Size(40, 20);
             runToolStripMenuItem.Text = "Run";
-            runToolStripMenuItem.Click += rUNToolStripMenuItem_Click;
+            runToolStripMenuItem.Click += runToolStripMenuItem_Click;
             // 
             // attachToolStripMenuItem
             // 
@@ -113,7 +112,6 @@
             testToolStripMenuItem.Name = "testToolStripMenuItem";
             testToolStripMenuItem.Size = new Size(39, 20);
             testToolStripMenuItem.Text = "Test";
-            testToolStripMenuItem.Click += testToolStripMenuItem_Click;
             // 
             // richTextBoxScriptInput
             // 

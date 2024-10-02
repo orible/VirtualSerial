@@ -20,6 +20,10 @@ namespace VirtualSerial
         {
             Code = code;
         }
+        public Message(MessageCode code, byte[] inBuf)
+        {
+            Code = code;
+        }
         public Message(string str, SendAsEncoding encoding)
         {
             SBuf = str;

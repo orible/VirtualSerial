@@ -22,6 +22,8 @@ namespace VirtualSerial
         public int readtimeout;
         public int writetimeout;
 
+        public string UIDAttachedConsole;
+
         public State(bool connected)
         {
             Connected = connected;
