@@ -92,6 +92,9 @@
             label2 = new Label();
             textBoxStopCode = new TextBox();
             comboBoxDataBit = new ComboBox();
+            scriptingToolStripMenuItem = new ToolStripMenuItem();
+            activeToolStripMenuItem = new ToolStripMenuItem();
+            newToolStripMenuItem = new ToolStripMenuItem();
             groupBox2.SuspendLayout();
             groupBox3.SuspendLayout();
             statusStrip1.SuspendLayout();
@@ -569,7 +572,7 @@
             // menuStrip1
             // 
             menuStrip1.ImageScalingSize = new Size(24, 24);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, aboutToolStripMenuItem, settingsToolStripMenuItem, loadToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, aboutToolStripMenuItem, settingsToolStripMenuItem, loadToolStripMenuItem, scriptingToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(4, 1, 0, 1);
@@ -731,6 +734,26 @@
             comboBoxDataBit.Size = new Size(100, 23);
             comboBoxDataBit.TabIndex = 49;
             // 
+            // scriptingToolStripMenuItem
+            // 
+            scriptingToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { activeToolStripMenuItem, newToolStripMenuItem });
+            scriptingToolStripMenuItem.Name = "scriptingToolStripMenuItem";
+            scriptingToolStripMenuItem.Size = new Size(66, 22);
+            scriptingToolStripMenuItem.Text = "Scripting";
+            // 
+            // activeToolStripMenuItem
+            // 
+            activeToolStripMenuItem.Name = "activeToolStripMenuItem";
+            activeToolStripMenuItem.Size = new Size(180, 22);
+            activeToolStripMenuItem.Text = "Active";
+            // 
+            // newToolStripMenuItem
+            // 
+            newToolStripMenuItem.Name = "newToolStripMenuItem";
+            newToolStripMenuItem.Size = new Size(180, 22);
+            newToolStripMenuItem.Text = "New";
+            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -829,5 +852,8 @@
         private ToolStripMenuItem savePesetToolStripMenuItem;
         private ToolStripMenuItem loadSessionToolStripMenuItem;
         private ToolStripMenuItem saveSessionToolStripMenuItem;
+        private ToolStripMenuItem scriptingToolStripMenuItem;
+        private ToolStripMenuItem activeToolStripMenuItem;
+        private ToolStripMenuItem newToolStripMenuItem;
     }
 }

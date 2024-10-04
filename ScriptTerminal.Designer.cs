@@ -35,6 +35,7 @@
             saveToolStripMenuItem = new ToolStripMenuItem();
             compileToolStripMenuItem = new ToolStripMenuItem();
             runToolStripMenuItem = new ToolStripMenuItem();
+            stopToolStripMenuItem = new ToolStripMenuItem();
             attachToolStripMenuItem = new ToolStripMenuItem();
             testToolStripMenuItem = new ToolStripMenuItem();
             richTextBoxScriptInput = new RichTextBox();
@@ -56,7 +57,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, compileToolStripMenuItem, runToolStripMenuItem, attachToolStripMenuItem, testToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, compileToolStripMenuItem, runToolStripMenuItem, stopToolStripMenuItem, attachToolStripMenuItem, testToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(800, 24);
@@ -97,6 +98,14 @@
             runToolStripMenuItem.Size = new Size(40, 20);
             runToolStripMenuItem.Text = "Run";
             runToolStripMenuItem.Click += runToolStripMenuItem_Click;
+            // 
+            // stopToolStripMenuItem
+            // 
+            stopToolStripMenuItem.Enabled = false;
+            stopToolStripMenuItem.Name = "stopToolStripMenuItem";
+            stopToolStripMenuItem.Size = new Size(43, 20);
+            stopToolStripMenuItem.Text = "Stop";
+            stopToolStripMenuItem.Click += stopToolStripMenuItem_Click;
             // 
             // attachToolStripMenuItem
             // 
@@ -237,5 +246,6 @@
         private GroupBox groupBox1;
         private GroupBox groupBox2;
         private ToolStripMenuItem runToolStripMenuItem;
+        private ToolStripMenuItem stopToolStripMenuItem;
     }
 }

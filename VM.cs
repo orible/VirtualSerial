@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Interop;
@@ -23,8 +24,13 @@ namespace VirtualSerial
         private DynValue fnMain;
 
         // callback timers
+        Mutex mutTimers = new Mutex();
         Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
+
+        Mutex mutInvokeCallbacks = new Mutex();
         Dictionary<string, VMFuncInvoke> invokeCallbacks = new Dictionary<string, VMFuncInvoke>();
+
+        Mutex mutHookListeners = new Mutex();
         Dictionary<string, VMHooks> hookListeners = new Dictionary<string, VMHooks>();
 
         // in and out messages
@@ -36,7 +42,10 @@ namespace VirtualSerial
         
         // status
         volatile bool ThreadIsRunning = false, IsDisposed = false;
-
+        void Log(string s)
+        {
+            CallListeners("_log", s);
+        }
         void _DoMessage(VMMessage msg)
         {
             switch (msg.Code) 
@@ -46,8 +55,7 @@ namespace VirtualSerial
                         VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
                         // get global function and execute it
                         string fnc = call.Call;
-                        var fn = lScript.Globals[fnc];
-                        lScript.Call(fn, call.args);
+                        _call(call.Call, call.args);
                         //CallRegistrations(fnc);
                     }
                     break;
@@ -70,25 +78,40 @@ namespace VirtualSerial
         {
             this._in.Add(data);
         }
-        // loop registrations
-        void _CallRegistrations(string func)
-        {
 
-        }
         // tick VM thread until signalled to stop
         void _Thread(object ctx)
         {
-            Settings settings = (Settings)ctx;
-            while (!cancelToken.IsCancellationRequested)
+            try
             {
-                VMMessage item;
-                var msg = _in.TryTake(out item);
-                if (msg)
-                {
-                    _DoMessage(item);
-                }
-                // do tick
+                CallListeners("_start", null);
+                ThreadCtx settings = (ThreadCtx)ctx;
+                fnMain.Function.Call();
+
                 _Tick();
+
+                while (!cancelToken.IsCancellationRequested)
+                {
+                    VMMessage item;
+                    var msg = _in.TryTake(out item);
+                    Log($"ate message: {item.Code}");
+                    if (msg)
+                    {
+                        CallListeners("_domessage");
+                        _DoMessage(item);
+                    }
+                    // do tick
+                    _Tick();
+                    CallListeners("_tick", null);
+                }
+                CallListeners("_stop", null);
+            }
+            catch (InterpreterException e)
+            {
+                Log(e.Message.ToString());
+                CallListeners("_exception", e);
+                CallListeners("_stop", null);
+                return;
             }
         }
         void _Tick()
@@ -172,6 +195,7 @@ namespace VirtualSerial
             public VMFuncInvoke(Action<VM, object[]> Func, string Filter)
             {
                 this.Filter = Filter;
+                this.Func = Func;
             }
         }
         public class VMDelegate
@@ -185,7 +209,7 @@ namespace VirtualSerial
                 this.Args = Args;
             }
         }
-        private class VMHooks
+        private class VMHooks: Callback
         {
             public DynValue Func;
             public object[] Args;
@@ -210,8 +234,10 @@ namespace VirtualSerial
             public int Delay;
             public int Repeat;
             public DateTime LastCall;
-            public Timer(DynValue Func) : base()
+            public Timer(DynValue Func, int delay, int repeat) : base()
             {
+                this.Delay = delay;
+                this.Repeat = repeat;
                 this.Func = Func;
             }
         }
@@ -255,21 +281,30 @@ namespace VirtualSerial
         {
             return (thread != null && thread.IsAlive);
         }
-        public void RunAsThreaded()
+
+        public void Stop()
         {
-            if (IsRunningThreaded()) return;
+            if (cancelToken != null)
+                cancelToken.Cancel();
+        }
+        public bool RunAsThreaded()
+        {
+            if (IsRunningThreaded()) return false;
             cancelToken = new();
             lfuncTickRate(15);
             thread = new Thread(new ParameterizedThreadStart(_Thread));
             thread.Start(new ThreadCtx(settings));
+            return true;
         }
         public void Compile()
         {
+            if (bufferedScript == null || bufferedScript == "") return;
             Script vmScript = new Script();
             DynValue _fnMain = vmScript.LoadString(bufferedScript);
             _attachGlobals(ref vmScript);
             fnMain = _fnMain;
             lScript = vmScript;
+            CallListeners("_compile");
         }
         public void SetScript(string buffer)
         {
@@ -278,10 +313,10 @@ namespace VirtualSerial
         public void RunAndTick()
         {
             fnMain.Function.Call();
+            _Tick();
         }
         private int lfuncReceiveHook(string funcname, DynValue func)
         {
-            
             //this.callbacks["REGISTER_RECEIVE_LINE_" + funcname] = new Callback(func);
             return -1;
         }
@@ -293,6 +328,8 @@ namespace VirtualSerial
         }
         private int lfuncRegisterHook(string func, DynValue val)
         {
+            VMHooks hook = new VMHooks(val, null);
+            this.hookListeners.Add(hook.UID, hook);
             return -1;
         }
         private int lfuncTickRate(int tickrate)
@@ -325,9 +362,7 @@ namespace VirtualSerial
         }
         private int lfuncAddTimer(string name, int delay, int repeat, DynValue value)
         {
-            var timer = new Timer(value);
-            timer.Delay = delay;
-            timer.Repeat = repeat;
+            var timer = new Timer(value, delay, repeat);
             this.timers.Add(name, timer);
             return -1;
         }
@@ -350,15 +385,19 @@ namespace VirtualSerial
             CallListeners("SEND", buf);
             return 0;
         }
+        // invoke function callbacks registered to listen to when a function name is invoked in the lua program
         private void CallListeners(string filter, params object[] args)
         {
-            foreach(var cb in this.invokeCallbacks)
+            filter = filter.ToUpper();
+            //mutInvokeCallbacks.WaitOne();
+            foreach (var cb in this.invokeCallbacks)
             {
                 if (cb.Value.Filter.StartsWith(filter))
                 {
                     cb.Value.Func.Invoke(this, args);
                 }
             }
+            //mutInvokeCallbacks.ReleaseMutex();
         }
         // attaches a invoke callback and returns the callback ID
         // all function names are unique and upper case
@@ -366,7 +405,9 @@ namespace VirtualSerial
         {
             var filter = FunctionFilter.ToUpper();
             var invoke = new VMFuncInvoke(action, filter);
+            mutInvokeCallbacks.WaitOne();
             invokeCallbacks.Add(invoke.UID, invoke);
+            mutInvokeCallbacks.ReleaseMutex();
             return invoke.UID;
         }
         public void Invoke(Action<VM, object[]> action, params object[] args)
@@ -378,27 +419,24 @@ namespace VirtualSerial
             }
             SendMessage(new VMMessage(VMMESSAGE.DELEGATE, new VMDelegate(action, args)));
         }
-        public  void CallList(object sender, string[] functions, VMArgs args)
+        private bool _call(string function, params object[] args)
         {
-
-        }
-        public void CallRegisterCallback(string function, params object[] args)
-        {
-
-        }
-        private void _call(string function, params object[] args)
-        {
+            CallListeners("_func", function, args);
             var fn = this.lScript.Globals[function];
-            if (fn == null) return;
+            if (fn == null) return false;
             lScript.Call(fn, args);
+            return true;
         }
         private void _callHooks(string filter, params object[] args)
         {
+            mutHookListeners.WaitOne();
             foreach (var e in hookListeners)
             {
                 e.Value.Func.Function.Call(args);
             }
+            mutHookListeners.ReleaseMutex();
         }
+        // call listeners
         public void CallHook(string hookfilter, params object[] args)
         {
             hookfilter = hookfilter.ToUpper();

@@ -56,7 +56,7 @@ namespace VirtualSerial
 
         private byte[] GetStopCode()
         {
-            byte[] buf = ParseBadHexStringLiteral(this.textBoxStopCode.Text, 2);
+            byte[] buf = Parse.ParseBadHexStringLiteral(this.textBoxStopCode.Text, 2);
             return buf.Take(buf.Length - 1).ToArray();
         }
 
@@ -136,7 +136,7 @@ namespace VirtualSerial
             }
 
             richTextBoxInputLog.Invoke(() => { richTextBoxInputLog.AppendText("[Thread] Signalling read to stop...\n"); });
-            
+
             // shut down read thread
             queueMessageRead.Add(new Message(Message.MessageCode.STOP));
 
@@ -276,7 +276,7 @@ namespace VirtualSerial
 
             labelProg2.Invoke(() => labelProg2.Text = "Shutting down...");
             richTextBoxOutputLog.Invoke(() => { richTextBoxOutputLog.AppendText("\n[Thread] Shutdown signal...\n"); });
-           
+
             // empty input thread
             while (true)
             {
@@ -287,7 +287,8 @@ namespace VirtualSerial
 
             // close port
             _serialPort.Close();
-            this.BeginInvoke(() => { 
+            this.BeginInvoke(() =>
+            {
                 this.buttonConnect.Enabled = true;
                 this.buttonDisconnect.Enabled = false;
                 richTextBoxOutputLog.AppendText("[Thread] Stopped\n");
@@ -306,7 +307,7 @@ namespace VirtualSerial
         {
             return this.UITermList.First();
         }
-        Regex isNumber = new Regex(@"^\d$");
+
         Port GetUISettingsToPort()
         {
             int baud, _databits, readtimeout, writetimeout;
@@ -432,53 +433,8 @@ namespace VirtualSerial
             queueMessageWrite.Add(new Message(Message.MessageCode.STOP));
         }
 
-        private static readonly Regex matchBase16 = new Regex("[^0-9ABCDEF]");
-        private static readonly Regex matchWhitespace = new Regex(@"\s+");
-
-        byte[] ParseHexString(string str, int n)
-        {
-            byte[] buf = new byte[str.Length * n];
-            int shunt = 0;
-            for (int i = 0; i < str.Length; i++)
-            {
-                if ((i % n) == 0 && i < str.Length - 1)
-                {
-                    string substr = str.Substring(i, Math.Min(n, str.Length));
-                    string padleft = substr.PadLeft(2, '0');
-                    byte byt = Convert.ToByte(padleft, 16); ;
-                    buf[shunt++] = byt;
-                }
-            }
-            return buf;
-        }
-
-        // clean and parse a user input hex string
-        // It's probably complete junk so transform it to upper
-        // strip bad characters
-        byte[] ParseBadHexStringLiteral(string str, int n)
-        {
-            str = str.ToUpper();
-            str = matchBase16.Replace(str, "");
-            str = matchWhitespace.Replace(str, "");
-
-            byte[] buf = new byte[(str.Length / 2) + 1];
-            int shunt = 0;
-            for (int i = 0; i < str.Length; i++)
-            {
-                if ((i % n) == 0 && i < str.Length - 1)
-                {
-                    string substr = str.Substring(i, Math.Min(n, str.Length));
-                    string padleft = substr.PadLeft(2, '0');
-                    byte byt = Convert.ToByte(padleft, 16); ;
-                    buf[shunt++] = byt;
-                }
-            }
-            return buf;
-        }
-
         bool skipTextBoxUpdate = false;
         private void richTextBoxInputHex_TextChanged(object sender, EventArgs e) { }
-
         private void richTextBoxInput_TextChanged(object sender, EventArgs e)
         {
             // convert ascii to text
@@ -501,7 +457,7 @@ namespace VirtualSerial
         {
             skipTextBoxUpdate = true;
             string str = richTextBoxInputHex.Text;
-            byte[] buffer = ParseBadHexStringLiteral(str, 2);
+            byte[] buffer = Parse.ParseBadHexStringLiteral(str, 2);
 
             // convert back to text to show it in the text representation box
             string text = System.Text.Encoding.ASCII.GetString(buffer);
@@ -559,7 +515,7 @@ namespace VirtualSerial
         private void buttonInputHexSend_Click(object sender, EventArgs e)
         {
             if (richTextBoxInputHex.Text == "") return;
-            byte[] buf = ParseBadHexStringLiteral(richTextBoxInputHex.Text, 2);
+            byte[] buf = Parse.ParseBadHexStringLiteral(richTextBoxInputHex.Text, 2);
             queueMessageWrite.Add(new Message(richTextBoxInputHex.Text, buf, Message.SendAsEncoding.ASCII));
             richTextBoxInput.Clear();
         }
@@ -596,33 +552,9 @@ namespace VirtualSerial
             mutUITermList.ReleaseMutex();
         }
 
-        void ChildTermFormClosed_Event(object sender, FormClosedEventArgs e)
-        {
-            ScriptTerminal inst = (ScriptTerminal)sender;
-            UITermList.RemoveAll((e) => e.GUID == inst.GUID);
-        }
-
         private void button2_Click(object sender, EventArgs e)
         {
-            var vm = new VM();
-            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = ReadMode.RAW; });
-            vm.RegisterFunctionInvokeListener("SEND", (vm, ctx) => { queueMessageWrite.Add(new Message(Message.MessageCode.WRITE, (byte[])ctx[0], Message.SendAsEncoding.ASCII)); });
-
-            ScriptTerminal term = new ScriptTerminal();
-            term.SetVM(vm);
-            
-            var uid = Guid.NewGuid().ToString();
-
-            mutVmList.WaitOne();
-            scripts[uid] = vm;
-            mutVmList.ReleaseMutex();
-
-            //term.Register(ref queueMessageScriptInput, ref queueMessageWrite);
-            term.FormClosed += new FormClosedEventHandler(ChildTermFormClosed_Event);
-            UITermList.Add(term);
-            term.Show();
-            term.OnStateUpdate(this, new State(WriteThreadRunning || ReadThreadRunning));
-            ListenersEmitServiceStatus(state);
+            newScriptingInstance();
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e) => this.buttonDisconnect_Click(sender, e);
@@ -683,7 +615,6 @@ namespace VirtualSerial
                 SetUIFromPortSettings(p);
             }
         }
-
         private void savePesetToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog dlg = new SaveFileDialog();
@@ -694,6 +625,48 @@ namespace VirtualSerial
                 Port p = GetUISettingsToPort();
                 File.WriteAllText(dlg.FileName, Config.SerializePort(p));
             }
+        }
+        void ChildTermFormClosed_Event(object sender, FormClosedEventArgs e)
+        {
+            ScriptTerminal inst = (ScriptTerminal)sender;
+            UITermList.RemoveAll((e) => e.GUID == inst.GUID);
+            activeToolStripMenuItem.DropDownItems.RemoveByKey(inst.GUID);
+        }
+        private void newScriptingInstance()
+        {
+            var vm = new VM();
+            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = (ReadMode)ctx[0]; });
+            vm.RegisterFunctionInvokeListener("SEND", (vm, ctx) => {
+                string str = (string)ctx[0];
+                byte[] buf = Encoding.ASCII.GetBytes(str);
+                queueMessageWrite.Add(new Message(Message.MessageCode.WRITE, buf, Message.SendAsEncoding.ASCII)); 
+            });
+
+            ScriptTerminal term = new ScriptTerminal();
+            term.SetVM(vm);
+
+            var uid = Guid.NewGuid().ToString();
+
+            mutVmList.WaitOne();
+            scripts[uid] = vm;
+            mutVmList.ReleaseMutex();
+            
+            ToolStripMenuItem newChild = new ToolStripMenuItem();
+            newChild.Text =$"Script Instance <{uid}>";
+            newChild.Tag = uid;
+            newChild.Name = uid;
+            activeToolStripMenuItem.DropDownItems.Add(newChild);
+
+            //term.Register(ref queueMessageScriptInput, ref queueMessageWrite);
+            term.FormClosed += new FormClosedEventHandler(ChildTermFormClosed_Event);
+            UITermList.Add(term);
+            term.Show();
+            term.OnStateUpdate(this, new State(WriteThreadRunning || ReadThreadRunning));
+            ListenersEmitServiceStatus(state);
+        }
+        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            newScriptingInstance();
         }
     }
 }

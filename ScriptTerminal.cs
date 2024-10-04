@@ -9,6 +9,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Forms.Integration;
 using MoonSharp.Interpreter;
@@ -29,18 +30,35 @@ namespace VirtualSerial
         }
         private void ScriptTerminal_Load(object sender, EventArgs e)
         {
-
+            stopToolStripMenuItem.Enabled = false;
+            runToolStripMenuItem.Enabled = false;
         }
         public void SetVM(VM vmRef)
         {
             this.vm = vmRef;
-            this.vm.RegisterFunctionInvokeListener("connect", ScriptEvent);
-        }
-
-        void ScriptEvent(VM a, object[] args)
-        {
-
-        }
+            this.vm.RegisterFunctionInvokeListener("disconnect", (vm, dat) => Log($"Disconnect: {dat}"));
+            this.vm.RegisterFunctionInvokeListener("connect", (vm, dat) => Log($"Connect: {dat}"));
+            this.vm.RegisterFunctionInvokeListener("_func", (vm, dat) => Log($"Func: {dat}"));
+            this.vm.RegisterFunctionInvokeListener("_log", (vm, dat) => Log((string)dat[0]));
+            this.vm.RegisterFunctionInvokeListener("_start", (vm, dat) =>
+            {
+                this.Invoke(() =>
+                {
+                    this.stopToolStripMenuItem.Enabled = true;
+                    this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
+                    Log($"Running: {this.stopToolStripMenuItem.Enabled}");
+                });
+            });
+            this.vm.RegisterFunctionInvokeListener("_stop", (vm, dat) =>
+            {
+                this.Invoke(() =>
+                {
+                    this.stopToolStripMenuItem.Enabled = false;
+                    this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
+                    Log($"Running: {this.stopToolStripMenuItem.Enabled}");
+                });
+            });
+        }                                                        
 
         void Error(string s)
         {
@@ -62,13 +80,18 @@ namespace VirtualSerial
 
         void Log(string s)
         {
-            this.richTextBoxLog.AppendText(s);
-            this.richTextBoxLog.ScrollToCaret();
+            Invoke(() =>
+            {
+                this.richTextBoxLog.AppendText(s + "\n");
+                this.richTextBoxLog.ScrollToCaret();
+            });
         }
 
         private void compileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            vm.Invoke((vm, args) => {
+            this.runToolStripMenuItem.Enabled = true;
+            vm.Invoke((vm, args) =>
+            {
                 vm.SetScript(this.richTextBoxScriptInput.Text);
                 vm.Compile();
             });
@@ -93,17 +116,15 @@ namespace VirtualSerial
             {
                 vm.SetScript(this.richTextBoxScriptInput.Text);
                 vm.Compile();
-                vm.RunAsThreaded();
-                this.Invoke(() => Log("Compiled"));
+                var ret = vm.RunAsThreaded();
             });
-            Log("\n");
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
 
-            dlg.InitialDirectory = Path.Join(Application.StartupPath, "lua");
+            dlg.InitialDirectory = Path.Join(System.Windows.Forms.Application.StartupPath, "lua");
             if (dlg.ShowDialog() != DialogResult.OK) return;
             Stream file = dlg.OpenFile();
             using (StreamReader streamReader = new StreamReader(file))
@@ -143,5 +164,9 @@ namespace VirtualSerial
             }
         }
 
+        private async void stopToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            vm.Stop();
+        }
     }
 }
