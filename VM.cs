@@ -8,6 +8,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Interop;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static VirtualSerial.Form1;
@@ -50,6 +51,9 @@ namespace VirtualSerial
         {
             switch (msg.Code) 
             {
+                case VMMESSAGE.RECOMPILE_SCRIPT:
+                    _compile();
+                    break;
                 case VMMESSAGE.CALLFUNC:
                     {
                         VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
@@ -69,6 +73,7 @@ namespace VirtualSerial
                 case VMMESSAGE.DELEGATE:
                     {
                         VMDelegate call = ((VMDelegate)msg.Data);
+                        object ret;
                         call.Func.Invoke(this, call.Args);
                     }
                     break;
@@ -94,9 +99,9 @@ namespace VirtualSerial
                 {
                     VMMessage item;
                     var msg = _in.TryTake(out item);
-                    Log($"ate message: {item.Code}");
                     if (msg)
                     {
+                        Log($"ate message: {item.Code}");
                         CallListeners("_domessage");
                         _DoMessage(item);
                     }
@@ -107,6 +112,12 @@ namespace VirtualSerial
                 CallListeners("_stop", null);
             }
             catch (InterpreterException e)
+            {
+                Log(e.Message.ToString());
+                CallListeners("_exception", e);
+                CallListeners("_stop", null);
+                return;
+            } catch (Exception e)
             {
                 Log(e.Message.ToString());
                 CallListeners("_exception", e);
@@ -191,8 +202,8 @@ namespace VirtualSerial
         public class VMFuncInvoke: Callback
         {
             public string Filter;
-            public Action<VM, object[]> Func;
-            public VMFuncInvoke(Action<VM, object[]> Func, string Filter)
+            public FuncInvoke Func;
+            public VMFuncInvoke(FuncInvoke Func, string Filter)
             {
                 this.Filter = Filter;
                 this.Func = Func;
@@ -201,9 +212,9 @@ namespace VirtualSerial
         public class VMDelegate
         {
             public string UID = Guid.NewGuid().ToString();
-            public Action<VM, object[]> Func;
+            public FuncInvoke Func;
             public object[] Args;
-            public VMDelegate(Action<VM, object[]> Func, object[] Args)
+            public VMDelegate(FuncInvoke Func, object[] Args)
             {
                 this.Func = Func;
                 this.Args = Args;
@@ -296,14 +307,23 @@ namespace VirtualSerial
             thread.Start(new ThreadCtx(settings));
             return true;
         }
-        public void Compile()
+        public void _compile()
         {
-            if (bufferedScript == null || bufferedScript == "") return;
             Script vmScript = new Script();
             DynValue _fnMain = vmScript.LoadString(bufferedScript);
             _attachGlobals(ref vmScript);
             fnMain = _fnMain;
             lScript = vmScript;
+        }
+        public void Compile()
+        {
+            if (bufferedScript == null || bufferedScript == "") return;
+            if (IsRunningThreaded())
+            {
+                SendMessage(new VMMessage(VMMESSAGE.RECOMPILE_SCRIPT, null));
+                return;
+            }
+            _compile();
             CallListeners("_compile");
         }
         public void SetScript(string buffer)
@@ -381,8 +401,8 @@ namespace VirtualSerial
         }
         private int lfuncSend(string str)
         {
-            byte[] buf = Encoding.ASCII.GetBytes(str);
-            CallListeners("SEND", buf);
+            //byte[] buf = Encoding.ASCII.GetBytes(str);
+            CallListeners("SEND", str);
             return 0;
         }
         // invoke function callbacks registered to listen to when a function name is invoked in the lua program
@@ -399,9 +419,17 @@ namespace VirtualSerial
             }
             //mutInvokeCallbacks.ReleaseMutex();
         }
+        public class VMRet
+        {
+
+        }
+        public VMRet Ret(params object[] vars)
+        {
+            return new VMRet();
+        }
         // attaches a invoke callback and returns the callback ID
         // all function names are unique and upper case
-        public string RegisterFunctionInvokeListener(string FunctionFilter, Action<VM, object[]> action, params object[] ctx)
+        public string RegisterFunctionInvokeListener(string FunctionFilter, FuncInvoke action, params object[] ctx)
         {
             var filter = FunctionFilter.ToUpper();
             var invoke = new VMFuncInvoke(action, filter);
@@ -410,7 +438,8 @@ namespace VirtualSerial
             mutInvokeCallbacks.ReleaseMutex();
             return invoke.UID;
         }
-        public void Invoke(Action<VM, object[]> action, params object[] args)
+        public delegate object? FuncInvoke(VM vm, object[] args);
+        public void Invoke(FuncInvoke action, params object[] args)
         {
             if (!IsRunningThreaded())
             {

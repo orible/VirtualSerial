@@ -243,11 +243,12 @@ namespace VirtualSerial
                     foreach (var kv in this.scripts)
                     {
                         // invoked in the VM thread context - guaranteed to be a FIFO queue
-                        kv.Value.Invoke((vm, ctx) =>
+                        kv.Value.Invoke((VM vm, object[] ctx) =>
                         {
                             var readMode = ctx[1];
                             var message = ctx[0];
                             vm.Call("RECEIVE", message);
+                            return null;
                         }, message, readMode);
                     }
                     mutVmList.ReleaseMutex();
@@ -635,11 +636,28 @@ namespace VirtualSerial
         private void newScriptingInstance()
         {
             var vm = new VM();
-            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = (ReadMode)ctx[0]; });
+            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = (ReadMode)ctx[0]; return null;  });
             vm.RegisterFunctionInvokeListener("SEND", (vm, ctx) => {
                 string str = (string)ctx[0];
                 byte[] buf = Encoding.ASCII.GetBytes(str);
-                queueMessageWrite.Add(new Message(Message.MessageCode.WRITE, buf, Message.SendAsEncoding.ASCII)); 
+                queueMessageWrite.Add(new Message(Message.MessageCode.WRITE, buf, Message.SendAsEncoding.ASCII));
+                return null;
+            });
+            vm.RegisterFunctionInvokeListener("CONNECT", (vm, ctx) =>
+            {
+                return Invoke(() =>
+                {
+                    var port = new Port();
+                    port.PortName = (string)ctx[0];
+                    port.BufferMode = ReadMode.RAW;
+                    port.BaudRate = (int)ctx[2];
+                    //TODO
+                    port.WriteTimeout= (int)ctx[6];
+                    port.ReadTimeout = (int)ctx[7];
+                    SetUIFromPortSettings(port);
+                    InitPortFromUI();
+                    return vm.Ret(null);
+                });
             });
 
             ScriptTerminal term = new ScriptTerminal();

@@ -48,6 +48,7 @@ namespace VirtualSerial
                     this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
                     Log($"Running: {this.stopToolStripMenuItem.Enabled}");
                 });
+                return null;
             });
             this.vm.RegisterFunctionInvokeListener("_stop", (vm, dat) =>
             {
@@ -57,6 +58,7 @@ namespace VirtualSerial
                     this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
                     Log($"Running: {this.stopToolStripMenuItem.Enabled}");
                 });
+                return null;
             });
         }                                                        
 
@@ -78,13 +80,14 @@ namespace VirtualSerial
             runToolStripMenuItem.Enabled = _stat.Connected;
         }
 
-        void Log(string s)
+        object Log(string s)
         {
             Invoke(() =>
             {
                 this.richTextBoxLog.AppendText(s + "\n");
                 this.richTextBoxLog.ScrollToCaret();
             });
+            return null;
         }
 
         private void compileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -94,6 +97,7 @@ namespace VirtualSerial
             {
                 vm.SetScript(this.richTextBoxScriptInput.Text);
                 vm.Compile();
+                return null;
             });
         }
 
@@ -117,6 +121,7 @@ namespace VirtualSerial
                 vm.SetScript(this.richTextBoxScriptInput.Text);
                 vm.Compile();
                 var ret = vm.RunAsThreaded();
+                return null;
             });
         }
 
