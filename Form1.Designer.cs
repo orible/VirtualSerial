@@ -49,9 +49,10 @@
             label15 = new Label();
             comboBoxSendAs = new ComboBox();
             groupBox3 = new GroupBox();
-            labelProg3 = new Label();
-            labelProg1 = new Label();
+            splitContainer2 = new SplitContainer();
             labelProg2 = new Label();
+            labelProg1 = new Label();
+            labelProg3 = new Label();
             buttonConnect = new Button();
             label7 = new Label();
             label8 = new Label();
@@ -85,6 +86,9 @@
             savePesetToolStripMenuItem = new ToolStripMenuItem();
             loadSessionToolStripMenuItem = new ToolStripMenuItem();
             saveSessionToolStripMenuItem = new ToolStripMenuItem();
+            scriptingToolStripMenuItem = new ToolStripMenuItem();
+            activeToolStripMenuItem = new ToolStripMenuItem();
+            newToolStripMenuItem = new ToolStripMenuItem();
             groupBox4 = new GroupBox();
             label16 = new Label();
             comboBoxReadMode = new ComboBox();
@@ -92,11 +96,12 @@
             label2 = new Label();
             textBoxStopCode = new TextBox();
             comboBoxDataBit = new ComboBox();
-            scriptingToolStripMenuItem = new ToolStripMenuItem();
-            activeToolStripMenuItem = new ToolStripMenuItem();
-            newToolStripMenuItem = new ToolStripMenuItem();
             groupBox2.SuspendLayout();
             groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer2).BeginInit();
+            splitContainer2.Panel1.SuspendLayout();
+            splitContainer2.Panel2.SuspendLayout();
+            splitContainer2.SuspendLayout();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -128,25 +133,25 @@
             // 
             richTextBoxOutputLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             richTextBoxOutputLog.BackColor = SystemColors.Window;
-            richTextBoxOutputLog.BorderStyle = BorderStyle.FixedSingle;
+            richTextBoxOutputLog.BorderStyle = BorderStyle.None;
             richTextBoxOutputLog.ForeColor = Color.Black;
-            richTextBoxOutputLog.Location = new Point(407, 35);
+            richTextBoxOutputLog.Location = new Point(3, 20);
             richTextBoxOutputLog.Name = "richTextBoxOutputLog";
             richTextBoxOutputLog.ReadOnly = true;
-            richTextBoxOutputLog.Size = new Size(394, 197);
+            richTextBoxOutputLog.Size = new Size(393, 190);
             richTextBoxOutputLog.TabIndex = 3;
             richTextBoxOutputLog.Text = "";
             // 
             // richTextBoxInputLog
             // 
-            richTextBoxInputLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            richTextBoxInputLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             richTextBoxInputLog.BackColor = SystemColors.Window;
-            richTextBoxInputLog.BorderStyle = BorderStyle.FixedSingle;
+            richTextBoxInputLog.BorderStyle = BorderStyle.None;
             richTextBoxInputLog.ForeColor = Color.Black;
-            richTextBoxInputLog.Location = new Point(6, 35);
+            richTextBoxInputLog.Location = new Point(6, 20);
             richTextBoxInputLog.Name = "richTextBoxInputLog";
             richTextBoxInputLog.ReadOnly = true;
-            richTextBoxInputLog.Size = new Size(395, 197);
+            richTextBoxInputLog.Size = new Size(384, 190);
             richTextBoxInputLog.TabIndex = 9;
             richTextBoxInputLog.Text = "";
             // 
@@ -162,6 +167,7 @@
             // richTextBoxInputHex
             // 
             richTextBoxInputHex.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            richTextBoxInputHex.BorderStyle = BorderStyle.None;
             richTextBoxInputHex.Location = new Point(406, 49);
             richTextBoxInputHex.Name = "richTextBoxInputHex";
             richTextBoxInputHex.Size = new Size(395, 81);
@@ -181,7 +187,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(6, 17);
+            label5.Location = new Point(6, 2);
             label5.Name = "label5";
             label5.Size = new Size(95, 15);
             label5.TabIndex = 14;
@@ -190,7 +196,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(406, 17);
+            label6.Location = new Point(4, 2);
             label6.Name = "label6";
             label6.Size = new Size(120, 15);
             label6.TabIndex = 15;
@@ -232,6 +238,7 @@
             // richTextBoxInput
             // 
             richTextBoxInput.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            richTextBoxInput.BorderStyle = BorderStyle.None;
             richTextBoxInput.Location = new Point(8, 49);
             richTextBoxInput.Multiline = true;
             richTextBoxInput.Name = "richTextBoxInput";
@@ -318,13 +325,7 @@
             // groupBox3
             // 
             groupBox3.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            groupBox3.Controls.Add(labelProg3);
-            groupBox3.Controls.Add(labelProg1);
-            groupBox3.Controls.Add(labelProg2);
-            groupBox3.Controls.Add(label5);
-            groupBox3.Controls.Add(richTextBoxOutputLog);
-            groupBox3.Controls.Add(label6);
-            groupBox3.Controls.Add(richTextBoxInputLog);
+            groupBox3.Controls.Add(splitContainer2);
             groupBox3.Location = new Point(0, 3);
             groupBox3.Name = "groupBox3";
             groupBox3.Size = new Size(807, 236);
@@ -332,32 +333,57 @@
             groupBox3.TabStop = false;
             groupBox3.Text = "I/O History";
             // 
-            // labelProg3
+            // splitContainer2
             // 
-            labelProg3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            labelProg3.AutoSize = true;
-            labelProg3.Location = new Point(764, 17);
-            labelProg3.Name = "labelProg3";
-            labelProg3.Size = new Size(0, 15);
-            labelProg3.TabIndex = 18;
+            splitContainer2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            splitContainer2.Location = new Point(6, 17);
+            splitContainer2.Name = "splitContainer2";
             // 
-            // labelProg1
+            // splitContainer2.Panel1
             // 
-            labelProg1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            labelProg1.AutoSize = true;
-            labelProg1.Location = new Point(788, 17);
-            labelProg1.Name = "labelProg1";
-            labelProg1.Size = new Size(0, 15);
-            labelProg1.TabIndex = 16;
+            splitContainer2.Panel1.Controls.Add(label5);
+            splitContainer2.Panel1.Controls.Add(richTextBoxInputLog);
+            // 
+            // splitContainer2.Panel2
+            // 
+            splitContainer2.Panel2.Controls.Add(richTextBoxOutputLog);
+            splitContainer2.Panel2.Controls.Add(labelProg2);
+            splitContainer2.Panel2.Controls.Add(labelProg1);
+            splitContainer2.Panel2.Controls.Add(labelProg3);
+            splitContainer2.Panel2.Controls.Add(label6);
+            splitContainer2.Size = new Size(795, 213);
+            splitContainer2.SplitterDistance = 392;
+            splitContainer2.TabIndex = 19;
             // 
             // labelProg2
             // 
             labelProg2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             labelProg2.AutoSize = true;
-            labelProg2.Location = new Point(619, 17);
+            labelProg2.Location = new Point(303, 2);
             labelProg2.Name = "labelProg2";
-            labelProg2.Size = new Size(0, 15);
+            labelProg2.Size = new Size(27, 15);
             labelProg2.TabIndex = 17;
+            labelProg2.Text = "text";
+            // 
+            // labelProg1
+            // 
+            labelProg1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            labelProg1.AutoSize = true;
+            labelProg1.Location = new Point(336, 2);
+            labelProg1.Name = "labelProg1";
+            labelProg1.Size = new Size(27, 15);
+            labelProg1.TabIndex = 16;
+            labelProg1.Text = "text";
+            // 
+            // labelProg3
+            // 
+            labelProg3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            labelProg3.AutoSize = true;
+            labelProg3.Location = new Point(369, 2);
+            labelProg3.Name = "labelProg3";
+            labelProg3.Size = new Size(27, 15);
+            labelProg3.TabIndex = 18;
+            labelProg3.Text = "text";
             // 
             // buttonConnect
             // 
@@ -642,6 +668,26 @@
             saveSessionToolStripMenuItem.Size = new Size(142, 22);
             saveSessionToolStripMenuItem.Text = "Save Session";
             // 
+            // scriptingToolStripMenuItem
+            // 
+            scriptingToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { activeToolStripMenuItem, newToolStripMenuItem });
+            scriptingToolStripMenuItem.Name = "scriptingToolStripMenuItem";
+            scriptingToolStripMenuItem.Size = new Size(66, 22);
+            scriptingToolStripMenuItem.Text = "Scripting";
+            // 
+            // activeToolStripMenuItem
+            // 
+            activeToolStripMenuItem.Name = "activeToolStripMenuItem";
+            activeToolStripMenuItem.Size = new Size(107, 22);
+            activeToolStripMenuItem.Text = "Active";
+            // 
+            // newToolStripMenuItem
+            // 
+            newToolStripMenuItem.Name = "newToolStripMenuItem";
+            newToolStripMenuItem.Size = new Size(107, 22);
+            newToolStripMenuItem.Text = "New";
+            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
+            // 
             // groupBox4
             // 
             groupBox4.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -734,26 +780,6 @@
             comboBoxDataBit.Size = new Size(100, 23);
             comboBoxDataBit.TabIndex = 49;
             // 
-            // scriptingToolStripMenuItem
-            // 
-            scriptingToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { activeToolStripMenuItem, newToolStripMenuItem });
-            scriptingToolStripMenuItem.Name = "scriptingToolStripMenuItem";
-            scriptingToolStripMenuItem.Size = new Size(66, 22);
-            scriptingToolStripMenuItem.Text = "Scripting";
-            // 
-            // activeToolStripMenuItem
-            // 
-            activeToolStripMenuItem.Name = "activeToolStripMenuItem";
-            activeToolStripMenuItem.Size = new Size(180, 22);
-            activeToolStripMenuItem.Text = "Active";
-            // 
-            // newToolStripMenuItem
-            // 
-            newToolStripMenuItem.Name = "newToolStripMenuItem";
-            newToolStripMenuItem.Size = new Size(180, 22);
-            newToolStripMenuItem.Text = "New";
-            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -773,7 +799,12 @@
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
             groupBox3.ResumeLayout(false);
-            groupBox3.PerformLayout();
+            splitContainer2.Panel1.ResumeLayout(false);
+            splitContainer2.Panel1.PerformLayout();
+            splitContainer2.Panel2.ResumeLayout(false);
+            splitContainer2.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer2).EndInit();
+            splitContainer2.ResumeLayout(false);
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
             splitContainer1.Panel1.ResumeLayout(false);
@@ -855,5 +886,6 @@
         private ToolStripMenuItem scriptingToolStripMenuItem;
         private ToolStripMenuItem activeToolStripMenuItem;
         private ToolStripMenuItem newToolStripMenuItem;
+        private SplitContainer splitContainer2;
     }
 }

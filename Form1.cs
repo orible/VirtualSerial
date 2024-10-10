@@ -636,8 +636,9 @@ namespace VirtualSerial
         private void newScriptingInstance()
         {
             var vm = new VM();
-            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = (ReadMode)ctx[0]; return null;  });
-            vm.RegisterFunctionInvokeListener("SEND", (vm, ctx) => {
+            vm.RegisterFunctionInvokeListener("SETBUFFER", (vm, ctx) => { this.comboBoxReadMode.SelectedItem = (ReadMode)ctx[0]; return null; });
+            vm.RegisterFunctionInvokeListener("SEND", (vm, ctx) =>
+            {
                 string str = (string)ctx[0];
                 byte[] buf = Encoding.ASCII.GetBytes(str);
                 queueMessageWrite.Add(new Message(Message.MessageCode.WRITE, buf, Message.SendAsEncoding.ASCII));
@@ -652,7 +653,7 @@ namespace VirtualSerial
                     port.BufferMode = ReadMode.RAW;
                     port.BaudRate = (int)ctx[2];
                     //TODO
-                    port.WriteTimeout= (int)ctx[6];
+                    port.WriteTimeout = (int)ctx[6];
                     port.ReadTimeout = (int)ctx[7];
                     SetUIFromPortSettings(port);
                     InitPortFromUI();
@@ -668,9 +669,9 @@ namespace VirtualSerial
             mutVmList.WaitOne();
             scripts[uid] = vm;
             mutVmList.ReleaseMutex();
-            
+
             ToolStripMenuItem newChild = new ToolStripMenuItem();
-            newChild.Text =$"Script Instance <{uid}>";
+            newChild.Text = $"Script Instance <{uid}>";
             newChild.Tag = uid;
             newChild.Name = uid;
             activeToolStripMenuItem.DropDownItems.Add(newChild);
