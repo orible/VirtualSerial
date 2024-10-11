@@ -64,6 +64,9 @@ namespace VirtualSerial
         private void Form1_Load(object sender, EventArgs e)
         {
             themeData = new ColourSchemeData(this.BackColor, this.ForeColor);
+            labelProg2.Text = "";
+            labelSpinnerPoll.Text = "";
+            labelSpinnerRead.Text = "";
         }
 
         BindingList<String> ports;
@@ -160,6 +163,8 @@ namespace VirtualSerial
             var initState = (State)state;
             int spinnerActivity = 0;
             int spinnerMsgBuf = 0;
+            int readBytes = 0;
+
             ReadMode readMode = initState.buffermode;
             ReadThreadRunning = true;
 
@@ -189,13 +194,13 @@ namespace VirtualSerial
                     if (msg.Code == Message.MessageCode.STOP) break;
                 }
 
-                labelProg3.Invoke(() =>
+                labelSpinnerPoll.Invoke(() =>
                 {
                     if (++spinnerActivity >= spinner.Length)
                     {
                         spinnerActivity = 0;
                     }
-                    labelProg3.Text = spinner[spinnerActivity];
+                    labelSpinnerPoll.Text = spinner[spinnerActivity];
                 });
 
                 try
@@ -216,6 +221,7 @@ namespace VirtualSerial
                             break;
                         case ReadMode.LINE_BUFFERED:
                             message = _serialPort.ReadLine();
+                            read = message.Count() * 1;
                             break;
                         case ReadMode.RAW:
                             read = _serialPort.Read(buf, 0, 1024);
@@ -224,8 +230,10 @@ namespace VirtualSerial
                             break;
                         default:
                             this.richTextBoxOutputLog.Invoke(() => richTextBoxOutputLog.AppendText("error: no buffer mode selected, discarding buffer"));
+                            read = 0;
                             continue;
                     }
+                    readBytes += read;
 
                     string timecode = GetTimecode(DateTime.Now);
                     this.richTextBoxOutputLog.Invoke((string data, string timecode) =>
@@ -234,7 +242,7 @@ namespace VirtualSerial
                         {
                             spinnerMsgBuf = 0;
                         }
-                        labelProg1.Text = spinner[spinnerMsgBuf];
+                        labelSpinnerRead.Text = spinner[spinnerMsgBuf];
                         readMessages.Add(data);
                         richTextBoxOutputLog.AppendText(data);
                         richTextBoxOutputLog.ScrollToCaret();
@@ -274,9 +282,12 @@ namespace VirtualSerial
 
             // signal writer to stop
             queueMessageWrite.Add(new Message(Message.MessageCode.STOP));
-
-            labelProg2.Invoke(() => labelProg2.Text = "Shutting down...");
-            richTextBoxOutputLog.Invoke(() => { richTextBoxOutputLog.AppendText("\n[Thread] Shutdown signal...\n"); });
+            Invoke((Delegate)(() =>
+            {
+                toolStripStatusLabelReadWrite.Text = $"IO {readBytes}";
+                labelProg2.Text = "Shutting down...";
+                richTextBoxOutputLog.AppendText("\n[Thread] Shutdown signal...\n");
+            }));
 
             // empty input thread
             while (true)
@@ -288,7 +299,7 @@ namespace VirtualSerial
 
             // close port
             _serialPort.Close();
-            this.BeginInvoke(() =>
+            this.Invoke(() =>
             {
                 this.buttonConnect.Enabled = true;
                 this.buttonDisconnect.Enabled = false;
