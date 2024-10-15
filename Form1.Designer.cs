@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             comboBox1 = new ComboBox();
             buttonPortRefresh = new Button();
@@ -98,6 +99,7 @@
             label2 = new Label();
             textBoxStopCode = new TextBox();
             comboBoxDataBit = new ComboBox();
+            contextMenuStrip1 = new ContextMenuStrip(components);
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer3).BeginInit();
             splitContainer3.Panel1.SuspendLayout();
@@ -144,7 +146,7 @@
             richTextBoxOutputLog.Location = new Point(3, 20);
             richTextBoxOutputLog.Name = "richTextBoxOutputLog";
             richTextBoxOutputLog.ReadOnly = true;
-            richTextBoxOutputLog.Size = new Size(393, 146);
+            richTextBoxOutputLog.Size = new Size(415, 208);
             richTextBoxOutputLog.TabIndex = 3;
             richTextBoxOutputLog.Text = "";
             // 
@@ -157,7 +159,7 @@
             richTextBoxInputLog.Location = new Point(6, 20);
             richTextBoxInputLog.Name = "richTextBoxInputLog";
             richTextBoxInputLog.ReadOnly = true;
-            richTextBoxInputLog.Size = new Size(384, 146);
+            richTextBoxInputLog.Size = new Size(404, 208);
             richTextBoxInputLog.TabIndex = 9;
             richTextBoxInputLog.Text = "";
             // 
@@ -176,7 +178,7 @@
             richTextBoxInputHex.BorderStyle = BorderStyle.None;
             richTextBoxInputHex.Location = new Point(3, 30);
             richTextBoxInputHex.Name = "richTextBoxInputHex";
-            richTextBoxInputHex.Size = new Size(394, 145);
+            richTextBoxInputHex.Size = new Size(255, 222);
             richTextBoxInputHex.TabIndex = 12;
             richTextBoxInputHex.Text = "";
             richTextBoxInputHex.TextChanged += richTextBoxInputHex_TextChanged;
@@ -211,7 +213,7 @@
             // buttonInputSend
             // 
             buttonInputSend.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            buttonInputSend.Location = new Point(3, 189);
+            buttonInputSend.Location = new Point(3, 266);
             buttonInputSend.Name = "buttonInputSend";
             buttonInputSend.Size = new Size(75, 23);
             buttonInputSend.TabIndex = 16;
@@ -225,7 +227,7 @@
             groupBox2.Dock = DockStyle.Fill;
             groupBox2.Location = new Point(0, 0);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(807, 234);
+            groupBox2.Size = new Size(849, 311);
             groupBox2.TabIndex = 17;
             groupBox2.TabStop = false;
             groupBox2.Text = "Console";
@@ -253,18 +255,19 @@
             splitContainer3.Panel2.Controls.Add(label4);
             splitContainer3.Panel2.Controls.Add(buttonInputHexSend);
             splitContainer3.Panel2.Controls.Add(richTextBoxInputHex);
-            splitContainer3.Size = new Size(801, 212);
-            splitContainer3.SplitterDistance = 394;
+            splitContainer3.Size = new Size(843, 289);
+            splitContainer3.SplitterDistance = 575;
             splitContainer3.TabIndex = 25;
             // 
             // richTextBoxInput
             // 
             richTextBoxInput.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             richTextBoxInput.BorderStyle = BorderStyle.None;
+            richTextBoxInput.Font = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point);
             richTextBoxInput.Location = new Point(1, 30);
             richTextBoxInput.Multiline = true;
             richTextBoxInput.Name = "richTextBoxInput";
-            richTextBoxInput.Size = new Size(391, 145);
+            richTextBoxInput.Size = new Size(572, 222);
             richTextBoxInput.TabIndex = 24;
             richTextBoxInput.TextChanged += richTextBoxInput_TextChanged;
             richTextBoxInput.KeyDown += richTextBoxInput_KeyDown;
@@ -273,7 +276,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label1.AutoSize = true;
-            label1.Location = new Point(132, 189);
+            label1.Location = new Point(132, 266);
             label1.Margin = new Padding(2, 0, 2, 0);
             label1.Name = "label1";
             label1.Size = new Size(39, 15);
@@ -283,7 +286,7 @@
             // button1
             // 
             button1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            button1.Location = new Point(175, 183);
+            button1.Location = new Point(175, 260);
             button1.Margin = new Padding(2);
             button1.Name = "button1";
             button1.Size = new Size(32, 25);
@@ -295,7 +298,7 @@
             // buttonConvText
             // 
             buttonConvText.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            buttonConvText.Location = new Point(273, 2);
+            buttonConvText.Location = new Point(454, 2);
             buttonConvText.Margin = new Padding(2);
             buttonConvText.Name = "buttonConvText";
             buttonConvText.Size = new Size(120, 23);
@@ -308,17 +311,17 @@
             // 
             label15.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label15.AutoSize = true;
-            label15.Location = new Point(212, 189);
+            label15.Location = new Point(257, 266);
             label15.Name = "label15";
-            label15.Size = new Size(105, 15);
+            label15.Size = new Size(60, 15);
             label15.TabIndex = 18;
-            label15.Text = "Send As Encoding:";
+            label15.Text = "Encoding:";
             // 
             // comboBoxSendAs
             // 
             comboBoxSendAs.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             comboBoxSendAs.FormattingEnabled = true;
-            comboBoxSendAs.Location = new Point(323, 185);
+            comboBoxSendAs.Location = new Point(323, 262);
             comboBoxSendAs.Name = "comboBoxSendAs";
             comboBoxSendAs.Size = new Size(69, 23);
             comboBoxSendAs.TabIndex = 17;
@@ -337,7 +340,7 @@
             // buttonInputHexSend
             // 
             buttonInputHexSend.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            buttonInputHexSend.Location = new Point(324, 186);
+            buttonInputHexSend.Location = new Point(324, 263);
             buttonInputHexSend.Name = "buttonInputHexSend";
             buttonInputHexSend.Size = new Size(75, 23);
             buttonInputHexSend.TabIndex = 23;
@@ -351,7 +354,7 @@
             groupBox3.Dock = DockStyle.Fill;
             groupBox3.Location = new Point(0, 0);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(807, 192);
+            groupBox3.Size = new Size(849, 254);
             groupBox3.TabIndex = 18;
             groupBox3.TabStop = false;
             groupBox3.Text = "I/O History";
@@ -374,15 +377,15 @@
             splitContainer2.Panel2.Controls.Add(labelSpinnerRead);
             splitContainer2.Panel2.Controls.Add(labelSpinnerPoll);
             splitContainer2.Panel2.Controls.Add(label6);
-            splitContainer2.Size = new Size(795, 169);
-            splitContainer2.SplitterDistance = 392;
+            splitContainer2.Size = new Size(837, 231);
+            splitContainer2.SplitterDistance = 412;
             splitContainer2.TabIndex = 19;
             // 
             // labelProg2
             // 
             labelProg2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             labelProg2.AutoSize = true;
-            labelProg2.Location = new Point(254, 2);
+            labelProg2.Location = new Point(276, 2);
             labelProg2.Name = "labelProg2";
             labelProg2.Size = new Size(27, 15);
             labelProg2.TabIndex = 17;
@@ -392,7 +395,7 @@
             // 
             labelSpinnerRead.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             labelSpinnerRead.AutoSize = true;
-            labelSpinnerRead.Location = new Point(310, 2);
+            labelSpinnerRead.Location = new Point(332, 2);
             labelSpinnerRead.Name = "labelSpinnerRead";
             labelSpinnerRead.Size = new Size(27, 15);
             labelSpinnerRead.TabIndex = 16;
@@ -402,7 +405,7 @@
             // 
             labelSpinnerPoll.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             labelSpinnerPoll.AutoSize = true;
-            labelSpinnerPoll.Location = new Point(369, 2);
+            labelSpinnerPoll.Location = new Point(391, 2);
             labelSpinnerPoll.Name = "labelSpinnerPoll";
             labelSpinnerPoll.Size = new Size(27, 15);
             labelSpinnerPoll.TabIndex = 18;
@@ -571,9 +574,9 @@
             // 
             statusStrip1.ImageScalingSize = new Size(24, 24);
             statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabelActivity, toolStripStatusLabelVersion, toolStripStatusLabelReadWrite });
-            statusStrip1.Location = new Point(0, 590);
+            statusStrip1.Location = new Point(0, 729);
             statusStrip1.Name = "statusStrip1";
-            statusStrip1.Size = new Size(826, 22);
+            statusStrip1.Size = new Size(868, 22);
             statusStrip1.TabIndex = 47;
             statusStrip1.Text = "statusStrip1";
             // 
@@ -620,8 +623,8 @@
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(groupBox2);
-            splitContainer1.Size = new Size(807, 430);
-            splitContainer1.SplitterDistance = 192;
+            splitContainer1.Size = new Size(849, 569);
+            splitContainer1.SplitterDistance = 254;
             splitContainer1.TabIndex = 49;
             // 
             // menuStrip1
@@ -631,7 +634,7 @@
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(4, 1, 0, 1);
-            menuStrip1.Size = new Size(826, 24);
+            menuStrip1.Size = new Size(868, 24);
             menuStrip1.TabIndex = 50;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -707,13 +710,13 @@
             // activeToolStripMenuItem
             // 
             activeToolStripMenuItem.Name = "activeToolStripMenuItem";
-            activeToolStripMenuItem.Size = new Size(107, 22);
+            activeToolStripMenuItem.Size = new Size(180, 22);
             activeToolStripMenuItem.Text = "Active";
             // 
             // newToolStripMenuItem
             // 
             newToolStripMenuItem.Name = "newToolStripMenuItem";
-            newToolStripMenuItem.Size = new Size(107, 22);
+            newToolStripMenuItem.Size = new Size(180, 22);
             newToolStripMenuItem.Text = "New";
             newToolStripMenuItem.Click += newToolStripMenuItem_Click;
             // 
@@ -751,7 +754,7 @@
             groupBox4.Margin = new Padding(2);
             groupBox4.Name = "groupBox4";
             groupBox4.Padding = new Padding(2);
-            groupBox4.Size = new Size(807, 133);
+            groupBox4.Size = new Size(849, 133);
             groupBox4.TabIndex = 19;
             groupBox4.TabStop = false;
             groupBox4.Text = "Settings";
@@ -809,11 +812,16 @@
             comboBoxDataBit.Size = new Size(100, 23);
             comboBoxDataBit.TabIndex = 49;
             // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(61, 4);
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(826, 612);
+            ClientSize = new Size(868, 751);
             Controls.Add(groupBox4);
             Controls.Add(splitContainer1);
             Controls.Add(statusStrip1);
@@ -923,5 +931,6 @@
         private SplitContainer splitContainer2;
         private ToolStripStatusLabel toolStripStatusLabelReadWrite;
         private SplitContainer splitContainer3;
+        private ContextMenuStrip contextMenuStrip1;
     }
 }

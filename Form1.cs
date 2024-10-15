@@ -63,6 +63,14 @@ namespace VirtualSerial
         ColourSchemeData themeData;
         private void Form1_Load(object sender, EventArgs e)
         {
+            
+            //Font font1 = new Font(FontFamily.GenericMonospace, richTextBoxInput.Font.Size);
+            Font font1 = new Font("Lucida Console", richTextBoxInput.Font.Size * (float)1.1);
+
+            richTextBoxInput.Font = font1;
+            richTextBoxInputHex.Font = font1;
+            richTextBoxInputLog.Font = font1;
+            richTextBoxOutputLog.Font = font1;
             themeData = new ColourSchemeData(this.BackColor, this.ForeColor);
             labelProg2.Text = "";
             labelSpinnerPoll.Text = "";

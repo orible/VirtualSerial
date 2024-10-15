@@ -40,7 +40,7 @@ namespace VirtualSerial
 
         // tokens
         CancellationTokenSource cancelToken = new();
-        
+
         // status
         volatile bool ThreadIsRunning = false, IsDisposed = false;
         void Log(string s)
@@ -49,7 +49,7 @@ namespace VirtualSerial
         }
         void _DoMessage(VMMessage msg)
         {
-            switch (msg.Code) 
+            switch (msg.Code)
             {
                 case VMMESSAGE.RECOMPILE_SCRIPT:
                     _compile();
@@ -66,7 +66,7 @@ namespace VirtualSerial
                 case VMMESSAGE.CALLHOOK:
                     {
                         // get registered hook and execute functions matching filter
-                        object [] call = ((object[])msg.Data);
+                        object[] call = ((object[])msg.Data);
                         _callHooks((string)call[0], call[1]);
                     }
                     break;
@@ -185,7 +185,7 @@ namespace VirtualSerial
         public class VMMessage {
             public VMMESSAGE Code;
             public object Data;
-            public VMMessage(VMMESSAGE Code, params object [] Data)
+            public VMMessage(VMMESSAGE Code, params object[] Data)
             {
                 this.Code = Code;
                 this.Data = Data;
@@ -199,7 +199,7 @@ namespace VirtualSerial
                 this.Args = args;
             }
         }
-        public class VMFuncInvoke: Callback
+        public class VMFuncInvoke : Callback
         {
             public string Filter;
             public FuncInvoke Func;
@@ -220,7 +220,7 @@ namespace VirtualSerial
                 this.Args = Args;
             }
         }
-        private class VMHooks: Callback
+        private class VMHooks : Callback
         {
             public DynValue Func;
             public object[] Args;
@@ -230,6 +230,21 @@ namespace VirtualSerial
                 this.Args = Args;
             }
         }
+
+        void ExpandOps(ref Table reftable)
+        {
+            (string, DynValue)[] ops =
+            {
+                //("SEND", (Func<string, int>)lfuncSend),
+            };
+
+            foreach (var e in ops)
+            {
+                //reftable[e.ToUpper()] = false;
+                //reftable[e.ToLower()] = false;
+            }
+        }
+
         public class Callback
         {
             public string UID;
@@ -266,6 +281,7 @@ namespace VirtualSerial
         };
         private void _attachGlobals(ref Script vmScript)
         {
+            // assign global functions - this will overwrite them if they're defined in the script
             vmScript.Globals["SEND"] = (Func<string, int>)lfuncSend;
             vmScript.Globals["TIMER"] = (Func<string, int, int, DynValue, int>)lfuncAddTimer;
             vmScript.Globals["REMOVETIMER"] = (Func<string, int>)lfuncRemoveTimer;
@@ -427,6 +443,7 @@ namespace VirtualSerial
         {
             return new VMRet();
         }
+
         // attaches a invoke callback and returns the callback ID
         // all function names are unique and upper case
         public string RegisterFunctionInvokeListener(string FunctionFilter, FuncInvoke action, params object[] ctx)
