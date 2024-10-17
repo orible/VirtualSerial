@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using static VirtualSerial.ColourScheme;
+using System.Runtime.InteropServices;
 
 namespace VirtualSerial
 {
@@ -60,10 +61,37 @@ namespace VirtualSerial
             return buf.Take(buf.Length - 1).ToArray();
         }
 
+        [DllImport("user32.dll")]
+        static extern bool CreateCaret(IntPtr hWnd, IntPtr hBitmap, int nWidth, int nHeight);
+        [DllImport("user32.dll")]
+        static extern bool ShowCaret(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        static extern int DestroyCaret();
+
+        [DllImport("user32.dll")]
+        extern static int GetCaretBlinkTime();
+
+        [DllImport("user32.dll")]
+        extern static int SetCaretBlinkTime(int wMSeconds);
+
+
         ColourSchemeData themeData;
+
+        public void DrawCaret(Control ctrl)
+        {
+            var nHeight = 0;
+            var nWidth = 10;
+
+            nHeight = Font.Height;
+
+            CreateCaret(ctrl.Handle, IntPtr.Zero, nWidth, nHeight);
+            ShowCaret(ctrl.Handle);
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+
             //Font font1 = new Font(FontFamily.GenericMonospace, richTextBoxInput.Font.Size);
             Font font1 = new Font("Lucida Console", richTextBoxInput.Font.Size * (float)1.1);
 
@@ -71,10 +99,27 @@ namespace VirtualSerial
             richTextBoxInputHex.Font = font1;
             richTextBoxInputLog.Font = font1;
             richTextBoxOutputLog.Font = font1;
+            richTextBoxConsole.Font = font1;
+
+            //this.richTextBoxConsole.GotFocus += _gainedFocus;
+            //this.richTextBoxConsole.LostFocus += _lostFocus;
+
+            //DrawCaret(richTextBoxConsole);
+            //DrawCaret(richTextBoxInput
+
             themeData = new ColourSchemeData(this.BackColor, this.ForeColor);
             labelProg2.Text = "";
             labelSpinnerPoll.Text = "";
             labelSpinnerRead.Text = "";
+        }
+
+        private void _lostFocus(object? sender, EventArgs e)
+        {
+            DestroyCaret();
+        }
+        private void _gainedFocus(object? sender, EventArgs e)
+        {
+            DrawCaret(richTextBoxConsole);
         }
 
         BindingList<String> ports;
@@ -127,6 +172,7 @@ namespace VirtualSerial
                         //writeMessages.Add(msg.UserRepresentation);
                         richTextBoxInputLog.AppendText($">> {System.Text.Encoding.ASCII.GetString(msg.Buf)}\n");
                         richTextBoxInputLog.AppendText($">> {string.Join(", ", msg.Buf)}\n");
+                        richTextBoxConsole.AppendText(System.Text.Encoding.ASCII.GetString(msg.Buf));
                     }, msg, timecode);
                 }
                 catch (Exception e)
@@ -252,6 +298,7 @@ namespace VirtualSerial
                         }
                         labelSpinnerRead.Text = spinner[spinnerMsgBuf];
                         readMessages.Add(data);
+                        richTextBoxConsole.AppendText(data);
                         richTextBoxOutputLog.AppendText(data);
                         richTextBoxOutputLog.ScrollToCaret();
                     }, message, timecode);
@@ -705,6 +752,50 @@ namespace VirtualSerial
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
             newScriptingInstance();
+        }
+
+        string consoleLinebuffer;
+        private void richTextBoxConsole_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Back)
+            {
+                if (consoleLinebuffer.Length > 1)
+                    consoleLinebuffer = consoleLinebuffer.Substring(0, consoleLinebuffer.Length - 1);
+            }
+            if (e.KeyCode == Keys.Enter)
+            {
+                Message.SendAsEncoding enc = (Message.SendAsEncoding)this.comboBoxSendAs.SelectedItem;
+                string data = consoleLinebuffer;
+                byte[] buf;
+                switch (enc)
+                {
+                    case Message.SendAsEncoding.ASCII:
+                        buf = Encoding.ASCII.GetBytes(data);
+                        break;
+                    case Message.SendAsEncoding.ASCII_utf8:
+                        buf = Encoding.UTF8.GetBytes(data);
+                        break;
+                    case Message.SendAsEncoding.ASCII_UTF7:
+                        buf = Encoding.UTF7.GetBytes(data);
+                        break;
+                    default:
+                        MessageBox.Show("Bad SendAsEncoding combo box selection");
+                        return;
+                }
+                consoleLinebuffer = "";
+                return;
+            }
+
+            string key = (new System.Windows.Input.KeyConverter()).ConvertToString(e.KeyCode);
+            consoleLinebuffer += key;
+
+            int keyValue = (int)e.KeyCode;
+            if ((keyValue >= 0x30 && keyValue <= 0x39) // numbers
+             || (keyValue >= 0x41 && keyValue <= 0x5A) // letters
+             || (keyValue >= 0x60 && keyValue <= 0x69)) // numpad
+            {
+                // do something
+            }
         }
     }
 }
