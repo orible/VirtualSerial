@@ -112,7 +112,10 @@ namespace VirtualSerial
             labelSpinnerPoll.Text = "";
             labelSpinnerRead.Text = "";
         }
-
+        private void UpdateInfo()
+        {
+            toolStripStatusLabelReadWrite.Text = $"IO rx {0 / 1024} KB / tx {0 / 1024} KB";
+        }
         private void _lostFocus(object? sender, EventArgs e)
         {
             DestroyCaret();
@@ -155,7 +158,7 @@ namespace VirtualSerial
         void _WriteOpenPort(object state)
         {
             var initState = (State)state;
-
+            int writeBytes = 0; int readBytes = 0;
             richTextBoxInputLog.Invoke(() => { richTextBoxInputLog.AppendText("[Thread] Start\n"); });
             WriteThreadRunning = true;
             bool _stop = false;
@@ -165,10 +168,12 @@ namespace VirtualSerial
                 if (msg.Code == Message.MessageCode.STOP) break;
                 try
                 {
+                    writeBytes += msg.Buf.Length;
                     _serialPort.Write(msg.Buf, 0, msg.Buf.Length);
                     string timecode = GetTimecode(DateTime.Now);
                     richTextBoxInputLog.Invoke((Message msg, string timecode) =>
                     {
+                        UpdateInfo();
                         //writeMessages.Add(msg.UserRepresentation);
                         richTextBoxInputLog.AppendText($">> {System.Text.Encoding.ASCII.GetString(msg.Buf)}\n");
                         richTextBoxInputLog.AppendText($">> {string.Join(", ", msg.Buf)}\n");
@@ -289,9 +294,11 @@ namespace VirtualSerial
                     }
                     readBytes += read;
 
+
                     string timecode = GetTimecode(DateTime.Now);
                     this.richTextBoxOutputLog.Invoke((string data, string timecode) =>
                     {
+                        UpdateInfo();
                         if (++spinnerMsgBuf >= spinner.Length)
                         {
                             spinnerMsgBuf = 0;
@@ -339,7 +346,7 @@ namespace VirtualSerial
             queueMessageWrite.Add(new Message(Message.MessageCode.STOP));
             Invoke((Delegate)(() =>
             {
-                toolStripStatusLabelReadWrite.Text = $"IO {readBytes}";
+                toolStripStatusLabelReadWrite.Text = $"IO rx {readBytes} / tx 0";
                 labelProg2.Text = "Shutting down...";
                 richTextBoxOutputLog.AppendText("\n[Thread] Shutdown signal...\n");
             }));
@@ -447,6 +454,7 @@ namespace VirtualSerial
             return 1;
         }
 
+        Mutex mutState = new Mutex();
         State state = new State(false);
 
         void InitPort()
@@ -760,9 +768,11 @@ namespace VirtualSerial
             if (e.KeyCode == Keys.Back)
             {
                 if (consoleLinebuffer.Length > 1)
-                    consoleLinebuffer = consoleLinebuffer.Substring(0, consoleLinebuffer.Length - 1);
+                    consoleLinebuffer = consoleLinebuffer.Substring(0, consoleLinebuffer.Length - 2);
+                else
+                    e.Handled = true;
             }
-            if (e.KeyCode == Keys.Enter)
+            else if (e.KeyCode == Keys.Enter)
             {
                 Message.SendAsEncoding enc = (Message.SendAsEncoding)this.comboBoxSendAs.SelectedItem;
                 string data = consoleLinebuffer;
@@ -785,10 +795,11 @@ namespace VirtualSerial
                 consoleLinebuffer = "";
                 return;
             }
-
-            string key = (new System.Windows.Input.KeyConverter()).ConvertToString(e.KeyCode);
-            consoleLinebuffer += key;
-
+            else
+            {
+                //string key = (new System.Windows.Input.KeyConverter()).ConvertToString(e.KeyValue
+                consoleLinebuffer += e.KeyCode;
+            }
             int keyValue = (int)e.KeyCode;
             if ((keyValue >= 0x30 && keyValue <= 0x39) // numbers
              || (keyValue >= 0x41 && keyValue <= 0x5A) // letters

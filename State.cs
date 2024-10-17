@@ -25,6 +25,8 @@ namespace VirtualSerial
         public bool IsReadRunning;
         public bool IsWriteRunning;
         public string UIDAttachedConsole;
+        public int readBytes;
+        public int writeBytes;
 
         public State(bool connected)
         {

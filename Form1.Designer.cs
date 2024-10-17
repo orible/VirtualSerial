@@ -186,7 +186,7 @@
             richTextBoxInputHex.BorderStyle = BorderStyle.None;
             richTextBoxInputHex.Location = new Point(3, 30);
             richTextBoxInputHex.Name = "richTextBoxInputHex";
-            richTextBoxInputHex.Size = new Size(251, 200);
+            richTextBoxInputHex.Size = new Size(374, 200);
             richTextBoxInputHex.TabIndex = 12;
             richTextBoxInputHex.Text = "";
             richTextBoxInputHex.TextChanged += richTextBoxInputHex_TextChanged;
@@ -194,7 +194,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(346, 6);
+            label4.Location = new Point(83, 6);
             label4.Name = "label4";
             label4.Size = new Size(53, 15);
             label4.TabIndex = 13;
@@ -264,7 +264,7 @@
             splitContainer3.Panel2.Controls.Add(buttonInputHexSend);
             splitContainer3.Panel2.Controls.Add(richTextBoxInputHex);
             splitContainer3.Size = new Size(828, 267);
-            splitContainer3.SplitterDistance = 564;
+            splitContainer3.SplitterDistance = 441;
             splitContainer3.TabIndex = 25;
             // 
             // richTextBoxInput
@@ -275,7 +275,7 @@
             richTextBoxInput.Location = new Point(1, 30);
             richTextBoxInput.Multiline = true;
             richTextBoxInput.Name = "richTextBoxInput";
-            richTextBoxInput.Size = new Size(561, 200);
+            richTextBoxInput.Size = new Size(438, 200);
             richTextBoxInput.TabIndex = 24;
             richTextBoxInput.TextChanged += richTextBoxInput_TextChanged;
             richTextBoxInput.KeyDown += richTextBoxInput_KeyDown;
@@ -306,13 +306,14 @@
             // buttonConvText
             // 
             buttonConvText.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            buttonConvText.Location = new Point(443, 2);
+            buttonConvText.Location = new Point(323, 2);
             buttonConvText.Margin = new Padding(2);
             buttonConvText.Name = "buttonConvText";
-            buttonConvText.Size = new Size(120, 23);
+            buttonConvText.Size = new Size(116, 23);
             buttonConvText.TabIndex = 20;
             buttonConvText.Text = "Convert to Hex→";
             buttonConvText.UseVisualStyleBackColor = true;
+            buttonConvText.Visible = false;
             buttonConvText.Click += buttonConvText_Click;
             // 
             // label15
@@ -339,7 +340,7 @@
             buttonConvHex.Location = new Point(2, 2);
             buttonConvHex.Margin = new Padding(2);
             buttonConvHex.Name = "buttonConvHex";
-            buttonConvHex.Size = new Size(120, 23);
+            buttonConvHex.Size = new Size(76, 23);
             buttonConvHex.TabIndex = 19;
             buttonConvHex.Text = "← Convert to ASCII";
             buttonConvHex.UseVisualStyleBackColor = true;
@@ -348,7 +349,7 @@
             // buttonInputHexSend
             // 
             buttonInputHexSend.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            buttonInputHexSend.Location = new Point(324, 241);
+            buttonInputHexSend.Location = new Point(3, 240);
             buttonInputHexSend.Name = "buttonInputHexSend";
             buttonInputHexSend.Size = new Size(75, 23);
             buttonInputHexSend.TabIndex = 23;
