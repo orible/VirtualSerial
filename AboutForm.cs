@@ -11,9 +11,9 @@ using System.Windows.Forms;
 
 namespace VirtualSerial
 {
-    public partial class About : Form
+    public partial class AboutForm : Form
     {
-        public About()
+        public AboutForm()
         {
             InitializeComponent();
             label2.Text = "Version tag: " + AssemblyInfo.GetGitHash();

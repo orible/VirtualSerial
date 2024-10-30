@@ -1,6 +1,6 @@
 ﻿namespace VirtualSerial
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             comboBox1 = new ComboBox();
             buttonPortRefresh = new Button();
             richTextBoxOutputLog = new RichTextBox();
@@ -879,9 +879,12 @@
             richTextBoxConsole.Size = new Size(834, 524);
             richTextBoxConsole.TabIndex = 0;
             richTextBoxConsole.Text = "";
-            richTextBoxConsole.KeyDown += richTextBoxConsole_KeyDown;
+            richTextBoxConsole.TextChanged += richTextBoxConsole_TextChanged;
+            richTextBoxConsole.Enter += richTextBoxConsole_Enter;
+            richTextBoxConsole.KeyPress += richTextBoxConsole_KeyPress;
+            richTextBoxConsole.Leave += richTextBoxConsole_Leave;
             // 
-            // Form1
+            // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -893,10 +896,11 @@
             Icon = (Icon)resources.GetObject("$this.Icon");
             MainMenuStrip = menuStrip1;
             MinimumSize = new Size(842, 612);
-            Name = "Form1";
+            Name = "MainForm";
             Text = "Quick Virtual Serial (TX/RX)";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
+            Shown += MainForm_Shown;
             groupBox2.ResumeLayout(false);
             splitContainer3.Panel1.ResumeLayout(false);
             splitContainer3.Panel1.PerformLayout();

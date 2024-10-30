@@ -15,16 +15,16 @@ using System.Windows.Forms.Integration;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Serialization.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using static VirtualSerial.Form1;
+using static VirtualSerial.MainForm;
 
 namespace VirtualSerial
 {
-    public partial class ScriptTerminal : Form
+    public partial class ScriptTerminalForm : Form
     {
         public string GUID = Guid.NewGuid().ToString();
         VM vm;
 
-        public ScriptTerminal()
+        public ScriptTerminalForm()
         {
             InitializeComponent();
         }
@@ -42,7 +42,8 @@ namespace VirtualSerial
             this.vm.RegisterFunctionInvokeListener("_log", (vm, dat) => Log((string)dat[0]));
             this.vm.RegisterFunctionInvokeListener("_start", (vm, dat) =>
             {
-                this.Invoke(() =>
+                if (this.IsHandleCreated)
+                    this.Invoke(() =>
                 {
                     this.stopToolStripMenuItem.Enabled = true;
                     this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
@@ -52,7 +53,8 @@ namespace VirtualSerial
             });
             this.vm.RegisterFunctionInvokeListener("_stop", (vm, dat) =>
             {
-                this.Invoke(() =>
+                if (this.IsHandleCreated)
+                    this.Invoke(() =>
                 {
                     this.stopToolStripMenuItem.Enabled = false;
                     this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
@@ -82,6 +84,7 @@ namespace VirtualSerial
 
         object Log(string s)
         {
+            if (this.IsHandleCreated)
             Invoke(() =>
             {
                 this.richTextBoxLog.AppendText(s + "\n");

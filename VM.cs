@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using static VirtualSerial.Form1;
+using static VirtualSerial.MainForm;
 
 namespace VirtualSerial
 {
@@ -54,6 +54,10 @@ namespace VirtualSerial
                 case VMMESSAGE.RECOMPILE_SCRIPT:
                     _compile();
                     break;
+                case VMMESSAGE.RUN_SCRIPT:
+                    if (IsCompiled())
+                        fnMain.Function.Call();
+                    break;
                 case VMMESSAGE.CALLFUNC:
                     {
                         VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
@@ -91,7 +95,6 @@ namespace VirtualSerial
             {
                 CallListeners("_start", null);
                 ThreadCtx settings = (ThreadCtx)ctx;
-                fnMain.Function.Call();
 
                 _Tick();
 
@@ -140,8 +143,9 @@ namespace VirtualSerial
             STOP = 0,
             START = 1,
             CALLFUNC = 2,
-            DELEGATE = 5,
+            DELEGATE = 6,
             RECOMPILE_SCRIPT = 3,
+            RUN_SCRIPT = 5,
             CALLHOOK = 4,
         }
         class Settings
@@ -325,6 +329,7 @@ namespace VirtualSerial
         }
         public void _compile()
         {
+            if (bufferedScript == null || bufferedScript == "") return;
             Script vmScript = new Script();
             DynValue _fnMain = vmScript.LoadString(bufferedScript);
             _attachGlobals(ref vmScript);
@@ -428,6 +433,10 @@ namespace VirtualSerial
             //mutInvokeCallbacks.WaitOne();
             foreach (var cb in this.invokeCallbacks)
             {
+                if (cb.Value == null)
+                {
+                    continue;
+                }
                 if (cb.Value.Filter.StartsWith(filter))
                 {
                     cb.Value.Func.Invoke(this, args);

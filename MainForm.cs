@@ -13,9 +13,9 @@ using System.Runtime.InteropServices;
 
 namespace VirtualSerial
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             RefreshPorts();
@@ -377,7 +377,7 @@ namespace VirtualSerial
             ListenersEmitServiceStatus(initState);
         }
         // end ownership of _ReadOpenPort Thread
-        public ScriptTerminal GetActiveScript()
+        public ScriptTerminalForm GetActiveScript()
         {
             return this.UITermList.First();
         }
@@ -585,7 +585,7 @@ namespace VirtualSerial
 
         private void buttonDisconnect_Click(object sender, EventArgs e) => ShutDownThreads();
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e) => (new About()).ShowDialog();
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e) => (new AboutForm()).ShowDialog();
 
         private void buttonInputHexSend_Click(object sender, EventArgs e)
         {
@@ -602,7 +602,7 @@ namespace VirtualSerial
 
         private static Mutex mutUITermList = new Mutex();
         // UI table of child script windows
-        List<ScriptTerminal> UITermList = new List<ScriptTerminal>();
+        List<ScriptTerminalForm> UITermList = new List<ScriptTerminalForm>();
 
         public class MessageEventArgs : EventArgs
         {
@@ -703,9 +703,10 @@ namespace VirtualSerial
         }
         void ChildTermFormClosed_Event(object sender, FormClosedEventArgs e)
         {
-            ScriptTerminal inst = (ScriptTerminal)sender;
-            UITermList.RemoveAll((e) => e.GUID == inst.GUID);
-            activeToolStripMenuItem.DropDownItems.RemoveByKey(inst.GUID);
+            ScriptTerminalForm inst = (ScriptTerminalForm)sender;
+            //var term = UITermList.Find((e) => e.GUID = inst.GUID);
+            //UITermList.RemoveAll((e) => e.GUID == inst.GUID);
+            //activeToolStripMenuItem.DropDownItems.RemoveByKey(inst.GUID);
         }
         private void newScriptingInstance()
         {
@@ -735,7 +736,8 @@ namespace VirtualSerial
                 });
             });
 
-            ScriptTerminal term = new ScriptTerminal();
+            ScriptTerminalForm term = new ScriptTerminalForm();
+            vm.RunAsThreaded();
             term.SetVM(vm);
 
             var uid = Guid.NewGuid().ToString();
@@ -748,65 +750,124 @@ namespace VirtualSerial
             newChild.Text = $"Script Instance <{uid}>";
             newChild.Tag = uid;
             newChild.Name = uid;
+            newChild.Click += terminalToolStripClick;
             activeToolStripMenuItem.DropDownItems.Add(newChild);
 
             //term.Register(ref queueMessageScriptInput, ref queueMessageWrite);
             term.FormClosed += new FormClosedEventHandler(ChildTermFormClosed_Event);
             UITermList.Add(term);
+            term.Tag = uid;
             term.Show();
             term.OnStateUpdate(this, new State(WriteThreadRunning || ReadThreadRunning));
             ListenersEmitServiceStatus(state);
         }
+
+        private void terminalToolStripClick(object? sender, EventArgs e)
+        {
+            string uId = (string)((ToolStripMenuItem)sender).Tag;
+            ScriptTerminalForm form = UITermList.Find((e) => e.Tag == uId);
+
+            if (form == null || form.IsDisposed)
+            {
+                ScriptTerminalForm term = new ScriptTerminalForm();
+
+                VM value;
+                scripts.TryGetValue(uId, out value);
+                term.Show();
+
+                // attach VM after showing window because otherwise it will complain the vm handle doesn't exist yet
+                // when the callbacks are attached and then trying to immediately access window controls
+                // which is valid
+                term.SetVM(value);
+
+                UITermList.RemoveAll((e) => e.GUID == uId);
+                // overwrite terminal ref destroying the previous one
+                UITermList.Add(term);
+            }
+        }
+
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
             newScriptingInstance();
         }
 
         string consoleLinebuffer;
-        private void richTextBoxConsole_KeyDown(object sender, KeyEventArgs e)
+        private void richTextBoxConsole_TextChanged(object sender, EventArgs e)
         {
-            if (e.KeyCode == Keys.Back)
+            //ShowCaret(this.richTextBoxConsole.Handle);
+
+            // if not user input discard it
+            if (!richTextBoxConsole.Modified)
             {
-                if (consoleLinebuffer.Length > 1)
-                    consoleLinebuffer = consoleLinebuffer.Substring(0, consoleLinebuffer.Length - 2);
-                else
-                    e.Handled = true;
-            }
-            else if (e.KeyCode == Keys.Enter)
-            {
-                Message.SendAsEncoding enc = (Message.SendAsEncoding)this.comboBoxSendAs.SelectedItem;
-                string data = consoleLinebuffer;
-                byte[] buf;
-                switch (enc)
-                {
-                    case Message.SendAsEncoding.ASCII:
-                        buf = Encoding.ASCII.GetBytes(data);
-                        break;
-                    case Message.SendAsEncoding.ASCII_utf8:
-                        buf = Encoding.UTF8.GetBytes(data);
-                        break;
-                    case Message.SendAsEncoding.ASCII_UTF7:
-                        buf = Encoding.UTF7.GetBytes(data);
-                        break;
-                    default:
-                        MessageBox.Show("Bad SendAsEncoding combo box selection");
-                        return;
-                }
-                consoleLinebuffer = "";
+                // redraw linebuffer: 
+                // the full buffer
+                this.richTextBoxConsole.Text += consoleLinebuffer;
                 return;
             }
-            else
+
+            var text = this.richTextBoxConsole.Text;
+            /*var diff = Math.Max(0, text.Length - consoleText.Length);
+            if (diff > 0)
             {
-                //string key = (new System.Windows.Input.KeyConverter()).ConvertToString(e.KeyValue
-                consoleLinebuffer += e.KeyCode;
-            }
-            int keyValue = (int)e.KeyCode;
-            if ((keyValue >= 0x30 && keyValue <= 0x39) // numbers
-             || (keyValue >= 0x41 && keyValue <= 0x5A) // letters
-             || (keyValue >= 0x60 && keyValue <= 0x69)) // numpad
+                // we typed in this substring
+                var buffer = text.Substring(consoleText.Length, diff);
+                //consoleLinebuffer = buffer;
+            }*/
+        }
+
+        private void richTextBoxConsole_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            DrawCaret(this.richTextBoxConsole);
+            switch (e.KeyChar)
             {
-                // do something
+                case '\b':
+                    if (this.consoleLinebuffer.Length > 0)
+                    {
+                        this.consoleLinebuffer = this.consoleLinebuffer.Remove(this.consoleLinebuffer.Length - 1);
+                    }
+                    break;
+                case '\r':
+                    if (this.consoleLinebuffer.Length < 1) break;
+                    Message.SendAsEncoding enc = (Message.SendAsEncoding)this.comboBoxSendAs.SelectedItem;
+                    string data = consoleLinebuffer;
+                    byte[] buf;
+                    switch (enc)
+                    {
+                        case Message.SendAsEncoding.ASCII:
+                            buf = Encoding.ASCII.GetBytes(data);
+                            break;
+                        case Message.SendAsEncoding.ASCII_utf8:
+                            buf = Encoding.UTF8.GetBytes(data);
+                            break;
+                        case Message.SendAsEncoding.ASCII_UTF7:
+                            buf = Encoding.UTF7.GetBytes(data);
+                            break;
+                        default:
+                            MessageBox.Show("Bad SendAsEncoding combo box selection");
+                            return;
+                    }
+                    queueMessageWrite.Add(new Message(data, buf, enc));
+                    consoleLinebuffer = "";
+                    break;
+                default:
+                    this.consoleLinebuffer += e.KeyChar;
+                    break;
             }
+        }
+
+        private void MainForm_Shown(object sender, EventArgs e)
+        {
+            DrawCaret(richTextBoxConsole);
+        }
+
+        private void richTextBoxConsole_Enter(object sender, EventArgs e)
+        {
+            DrawCaret(richTextBoxConsole);
+        }
+
+        private void richTextBoxConsole_Leave(object sender, EventArgs e)
+        {
+            DestroyCaret();
         }
     }
 }

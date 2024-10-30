@@ -4,7 +4,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static VirtualSerial.Form1;
+using static VirtualSerial.MainForm;
 
 namespace VirtualSerial
 {

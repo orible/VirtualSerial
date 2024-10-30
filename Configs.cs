@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static VirtualSerial.Form1;
+using static VirtualSerial.MainForm;
 
 namespace VirtualSerial
 {
