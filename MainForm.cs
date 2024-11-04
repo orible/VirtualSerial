@@ -75,10 +75,12 @@ namespace VirtualSerial
         [DllImport("user32.dll")]
         extern static int SetCaretBlinkTime(int wMSeconds);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetCaretPos(int x, int y);
 
         ColourSchemeData themeData;
 
-        public void DrawCaret(Control ctrl)
+        public void CreateDrawCaret(Control ctrl)
         {
             var nHeight = 0;
             var nWidth = 10;
@@ -101,8 +103,8 @@ namespace VirtualSerial
             richTextBoxOutputLog.Font = font1;
             richTextBoxConsole.Font = font1;
 
-            //this.richTextBoxConsole.GotFocus += _gainedFocus;
-            //this.richTextBoxConsole.LostFocus += _lostFocus;
+            this.richTextBoxConsole.GotFocus += _gainedFocus;
+            this.richTextBoxConsole.LostFocus += _lostFocus;
 
             //DrawCaret(richTextBoxConsole);
             //DrawCaret(richTextBoxInput
@@ -112,17 +114,18 @@ namespace VirtualSerial
             labelSpinnerPoll.Text = "";
             labelSpinnerRead.Text = "";
         }
-        private void UpdateInfo()
+        private void UpdateInfo(int read, int write)
         {
-            toolStripStatusLabelReadWrite.Text = $"IO rx {0 / 1024} KB / tx {0 / 1024} KB";
+            toolStripStatusLabelReadWrite.Text = $"IO rx {read / 1024} KB / tx {write / 1024} KB";
         }
+
         private void _lostFocus(object? sender, EventArgs e)
         {
             DestroyCaret();
         }
         private void _gainedFocus(object? sender, EventArgs e)
         {
-            DrawCaret(richTextBoxConsole);
+            CreateDrawCaret(richTextBoxConsole);
         }
 
         BindingList<String> ports;
@@ -173,7 +176,8 @@ namespace VirtualSerial
                     string timecode = GetTimecode(DateTime.Now);
                     richTextBoxInputLog.Invoke((Message msg, string timecode) =>
                     {
-                        UpdateInfo();
+                        this.state.writeBytes += msg.Buf.Length;
+                        UpdateInfo(this.state.readBytes, this.state.writeBytes);
                         //writeMessages.Add(msg.UserRepresentation);
                         richTextBoxInputLog.AppendText($">> {System.Text.Encoding.ASCII.GetString(msg.Buf)}\n");
                         richTextBoxInputLog.AppendText($">> {string.Join(", ", msg.Buf)}\n");
@@ -215,6 +219,7 @@ namespace VirtualSerial
         List<string> readMessages = new List<string>();
         volatile bool ReadThreadRunning;
         const int ReadChunkSize = 512;
+        
 
         // Poll open port and control message thread
         void _ReadOpenPort(object state)
@@ -293,12 +298,11 @@ namespace VirtualSerial
                             continue;
                     }
                     readBytes += read;
-
-
                     string timecode = GetTimecode(DateTime.Now);
-                    this.richTextBoxOutputLog.Invoke((string data, string timecode) =>
+                    this.richTextBoxOutputLog.Invoke((string data, string timecode, int read) =>
                     {
-                        UpdateInfo();
+                        this.state.readBytes += read;
+                        UpdateInfo(this.state.readBytes, this.state.writeBytes);
                         if (++spinnerMsgBuf >= spinner.Length)
                         {
                             spinnerMsgBuf = 0;
@@ -308,7 +312,7 @@ namespace VirtualSerial
                         richTextBoxConsole.AppendText(data);
                         richTextBoxOutputLog.AppendText(data);
                         richTextBoxOutputLog.ScrollToCaret();
-                    }, message, timecode);
+                    }, message, timecode, read);
                     mutVmList.WaitOne();
                     foreach (var kv in this.scripts)
                     {
@@ -346,7 +350,7 @@ namespace VirtualSerial
             queueMessageWrite.Add(new Message(Message.MessageCode.STOP));
             Invoke((Delegate)(() =>
             {
-                toolStripStatusLabelReadWrite.Text = $"IO rx {readBytes} / tx 0";
+                UpdateInfo(this.state.readBytes, this.state.writeBytes);
                 labelProg2.Text = "Shutting down...";
                 richTextBoxOutputLog.AppendText("\n[Thread] Shutdown signal...\n");
             }));
@@ -817,7 +821,7 @@ namespace VirtualSerial
 
         private void richTextBoxConsole_KeyPress(object sender, KeyPressEventArgs e)
         {
-            DrawCaret(this.richTextBoxConsole);
+            //DrawCaret(this.richTextBoxConsole);
             if (this.richTextBoxConsole.SelectionStart != this.richTextBoxConsole.Text.Length)
             {
                 e.Handled = true;
@@ -858,21 +862,6 @@ namespace VirtualSerial
                     this.consoleLinebuffer += e.KeyChar;
                     break;
             }
-        }
-
-        private void MainForm_Shown(object sender, EventArgs e)
-        {
-            DrawCaret(richTextBoxConsole);
-        }
-
-        private void richTextBoxConsole_Enter(object sender, EventArgs e)
-        {
-            DrawCaret(richTextBoxConsole);
-        }
-
-        private void richTextBoxConsole_Leave(object sender, EventArgs e)
-        {
-            DestroyCaret();
         }
     }
 }

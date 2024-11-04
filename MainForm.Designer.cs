@@ -104,7 +104,7 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             tabPage2 = new TabPage();
-            richTextBoxConsole = new RichTextBox();
+            richTextBoxConsole = new TextBox();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer3).BeginInit();
             splitContainer3.Panel1.SuspendLayout();
@@ -875,14 +875,12 @@
             richTextBoxConsole.BorderStyle = BorderStyle.None;
             richTextBoxConsole.Dock = DockStyle.Fill;
             richTextBoxConsole.Location = new Point(3, 3);
+            richTextBoxConsole.Multiline = true;
             richTextBoxConsole.Name = "richTextBoxConsole";
             richTextBoxConsole.Size = new Size(834, 524);
             richTextBoxConsole.TabIndex = 0;
-            richTextBoxConsole.Text = "";
             richTextBoxConsole.TextChanged += richTextBoxConsole_TextChanged;
-            richTextBoxConsole.Enter += richTextBoxConsole_Enter;
             richTextBoxConsole.KeyPress += richTextBoxConsole_KeyPress;
-            richTextBoxConsole.Leave += richTextBoxConsole_Leave;
             // 
             // MainForm
             // 
@@ -900,7 +898,6 @@
             Text = "Quick Virtual Serial (TX/RX)";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
-            Shown += MainForm_Shown;
             groupBox2.ResumeLayout(false);
             splitContainer3.Panel1.ResumeLayout(false);
             splitContainer3.Panel1.PerformLayout();
@@ -928,6 +925,7 @@
             tabControl1.ResumeLayout(false);
             tabPage1.ResumeLayout(false);
             tabPage2.ResumeLayout(false);
+            tabPage2.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -1005,7 +1003,7 @@
         private TabControl tabControl1;
         private TabPage tabPage1;
         private TabPage tabPage2;
-        private RichTextBox richTextBoxConsole;
+        private TextBox richTextBoxConsole;
         private Label label17;
         private ComboBox comboBoxRecvEncoding;
     }
