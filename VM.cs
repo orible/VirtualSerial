@@ -51,13 +51,13 @@ namespace VirtualSerial
         {
             switch (msg.Code)
             {
-                case VMMESSAGE.RECOMPILE_SCRIPT:
+                /*case VMMESSAGE.RECOMPILE_SCRIPT:
                     _compile();
                     break;
                 case VMMESSAGE.RUN_SCRIPT:
                     if (IsCompiled())
                         fnMain.Function.Call();
-                    break;
+                    break;*/
                 case VMMESSAGE.CALLFUNC:
                     {
                         VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
@@ -104,13 +104,14 @@ namespace VirtualSerial
                     var msg = _in.TryTake(out item);
                     if (msg)
                     {
-                        Log($"ate message: {item.Code}");
+                        Log($"got message: {item.Code}");
                         CallListeners("_domessage");
                         _DoMessage(item);
                     }
                     // do tick
                     _Tick();
                     CallListeners("_tick", null);
+                    Thread.Sleep(1000/5);
                 }
                 CallListeners("_stop", null);
             }
@@ -189,7 +190,7 @@ namespace VirtualSerial
         public class VMMessage {
             public VMMESSAGE Code;
             public object Data;
-            public VMMessage(VMMESSAGE Code, params object[] Data)
+            public VMMessage(VMMESSAGE Code, object Data)
             {
                 this.Code = Code;
                 this.Data = Data;
@@ -248,7 +249,14 @@ namespace VirtualSerial
                 //reftable[e.ToLower()] = false;
             }
         }
+        public class VMRet
+        {
 
+        }
+        public VMRet Ret(params object[] vars)
+        {
+            return new VMRet();
+        }
         public class Callback
         {
             public string UID;
@@ -304,7 +312,7 @@ namespace VirtualSerial
             IsDisposed = true;
             cancelToken.Cancel();
         }
-        public bool IsCompiled()
+        public bool UnsafeIsCompiled()
         {
             return this.fnMain != null;
         }
@@ -327,7 +335,7 @@ namespace VirtualSerial
             thread.Start(new ThreadCtx(settings));
             return true;
         }
-        public void _compile()
+        public void UnsafeCompile()
         {
             if (bufferedScript == null || bufferedScript == "") return;
             Script vmScript = new Script();
@@ -335,26 +343,11 @@ namespace VirtualSerial
             _attachGlobals(ref vmScript);
             fnMain = _fnMain;
             lScript = vmScript;
+            //UnsafeCall("main", null);
         }
-        public void Compile()
-        {
-            if (bufferedScript == null || bufferedScript == "") return;
-            if (IsRunningThreaded())
-            {
-                SendMessage(new VMMessage(VMMESSAGE.RECOMPILE_SCRIPT, null));
-                return;
-            }
-            _compile();
-            CallListeners("_compile");
-        }
-        public void SetScript(string buffer)
+        public void UnsafeSetScript(string buffer)
         {
             bufferedScript = buffer;
-        }
-        public void RunAndTick()
-        {
-            fnMain.Function.Call();
-            _Tick();
         }
         private int lfuncReceiveHook(string funcname, DynValue func)
         {
@@ -417,7 +410,7 @@ namespace VirtualSerial
         }
         private int lfuncPrint(string str)
         {
-            CallListeners("PRINT", new VMEvent(VMEventCodeEnum.PRINT, str));
+            CallListeners("PRINT", str);
             return 1;
         }
         private int lfuncSend(string str)
@@ -426,31 +419,40 @@ namespace VirtualSerial
             CallListeners("SEND", str);
             return 0;
         }
+
+        private void UnsafeCallListeners(string filter, params object[] args)
+        {
+            filter = filter.ToUpper();
+            foreach (var entry in this.invokeCallbacks)
+            {
+                if (entry.Value == null)
+                    continue;
+
+                VMFuncInvoke invoke = entry.Value;
+                if (invoke.Filter.StartsWith(filter))
+                {
+                    invoke.Func.Invoke(this, args);
+                }
+            }
+        }
+
         // invoke function callbacks registered to listen to when a function name is invoked in the lua program
         private void CallListeners(string filter, params object[] args)
         {
             filter = filter.ToUpper();
-            //mutInvokeCallbacks.WaitOne();
-            foreach (var cb in this.invokeCallbacks)
+            mutInvokeCallbacks.WaitOne();
+            foreach (var entry in this.invokeCallbacks)
             {
-                if (cb.Value == null)
-                {
+                if (entry.Value == null)
                     continue;
-                }
-                if (cb.Value.Filter.StartsWith(filter))
+
+                VMFuncInvoke invoke = entry.Value;
+                if (invoke.Filter.StartsWith(filter))
                 {
-                    cb.Value.Func.Invoke(this, args);
+                    invoke.Func.Invoke(this, args);
                 }
             }
-            //mutInvokeCallbacks.ReleaseMutex();
-        }
-        public class VMRet
-        {
-
-        }
-        public VMRet Ret(params object[] vars)
-        {
-            return new VMRet();
+            mutInvokeCallbacks.ReleaseMutex();
         }
 
         // attaches a invoke callback and returns the callback ID
@@ -467,19 +469,32 @@ namespace VirtualSerial
         public delegate object? FuncInvoke(VM vm, object[] args);
         public void Invoke(FuncInvoke action, params object[] args)
         {
-            if (!IsRunningThreaded())
-            {
-                action.Invoke(this, args);
-                return;
-            }
+            //if (!IsRunningThreaded())
+            //{
+            //    action.Invoke(this, args);
+            //    return;
+            //}
             SendMessage(new VMMessage(VMMESSAGE.DELEGATE, new VMDelegate(action, args)));
         }
         private bool _call(string function, params object[] args)
         {
+            if (this.fnMain == null)
+                return false;
+
+            if (function.ToLower() == "main")
+            {
+                CallListeners("_func", function, args);
+                this.fnMain.Function.Call();
+                CallListeners("_func_post", function, args);
+            }
+
+            var fn = this.lScript.Globals.Get(function);
+            //var fn = this.lScript.Globals[function];
+            if (fn == null || fn == DynValue.Nil)
+                return false;
             CallListeners("_func", function, args);
-            var fn = this.lScript.Globals[function];
-            if (fn == null) return false;
             lScript.Call(fn, args);
+            CallListeners("_func_post", function, args);
             return true;
         }
         private void _callHooks(string filter, params object[] args)
@@ -492,27 +507,27 @@ namespace VirtualSerial
             mutHookListeners.ReleaseMutex();
         }
         // call listeners
-        public void CallHook(string hookfilter, params object[] args)
+        public void UnsafeCallHook(string hookfilter, params object[] args)
         {
             hookfilter = hookfilter.ToUpper();
-            if (!IsCompiled()) return;
-            if (IsRunningThreaded())
-            {
-                SendMessage(new VMMessage(VMMESSAGE.CALLHOOK, hookfilter, args));
-                return;
-            } 
+            //if (!UnsafeIsCompiled()) return;
+            //if (IsRunningThreaded())
+            //{
+            //    SendMessage(new VMMessage(VMMESSAGE.CALLHOOK, hookfilter, args));
+            //    return;
+            //} 
             _callHooks(hookfilter, args);
         }
         // call will execute the specified script
-        public void Call(string function, params object[] args)
+        public void UnsafeCall(string function, params object[] args)
         {
-            function = function.ToUpper();
-            if (!IsCompiled()) return;
-            if (IsRunningThreaded())
-            {
-                SendMessage(new VMMessage(VMMESSAGE.CALLFUNC, function, args));
-                return;
-            }
+            //function = function.ToUpper();
+            //if (!UnsafeIsCompiled()) return;
+            //if (IsRunningThreaded())
+            //{
+            //    SendMessage(new VMMessage(VMMESSAGE.CALLFUNC, function, args));
+            //    return;
+            //}
             _call(function, args);
         }
     }

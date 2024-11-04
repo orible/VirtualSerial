@@ -38,6 +38,7 @@ namespace VirtualSerial
             this.vm = vmRef;
             this.vm.RegisterFunctionInvokeListener("disconnect", (vm, dat) => Log($"Disconnect: {dat}"));
             this.vm.RegisterFunctionInvokeListener("connect", (vm, dat) => Log($"Connect: {dat}"));
+            this.vm.RegisterFunctionInvokeListener("print", (vm, dat) => Log((string)dat[0]));
             this.vm.RegisterFunctionInvokeListener("_func", (vm, dat) => Log($"Func: {dat}"));
             this.vm.RegisterFunctionInvokeListener("_log", (vm, dat) => Log((string)dat[0]));
             this.vm.RegisterFunctionInvokeListener("_start", (vm, dat) =>
@@ -93,39 +94,42 @@ namespace VirtualSerial
             return null;
         }
 
-        private void compileToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.runToolStripMenuItem.Enabled = true;
-            vm.Invoke((vm, args) =>
-            {
-                vm.SetScript(this.richTextBoxScriptInput.Text);
-                vm.Compile();
-                return null;
-            });
-        }
-
         private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog dlg = new SaveFileDialog();
             dlg.Filter = "Script|*.lua";
             dlg.ShowDialog();
-            if (dlg.FileName != "")
+            dlg.InitialDirectory = Path.GetFullPath("./lua");
+
+            if (dlg.ShowDialog() == DialogResult.OK)
             {
                 FlagScriptSaved = true;
                 File.WriteAllText(dlg.FileName, this.richTextBoxScriptInput.Text);
             }
         }
 
-        private void runToolStripMenuItem_Click(object sender, EventArgs e)
+        private void compileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Log($"[vm] running script...\n");
+            this.runToolStripMenuItem.Enabled = true;
             vm.Invoke((vm, args) =>
             {
-                vm.SetScript(this.richTextBoxScriptInput.Text);
-                vm.Compile();
-                var ret = vm.RunAsThreaded();
+                vm.UnsafeSetScript((string)args[0]);
+                vm.UnsafeCompile();
                 return null;
-            });
+            }, this.richTextBoxScriptInput.Text);
+        }
+
+        private void runToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //Log($"[vm] running script...\n");
+            vm.RunAsThreaded();
+            vm.Invoke((vm, args) =>
+            {
+                vm.UnsafeSetScript((string)args[0]);
+                vm.UnsafeCompile();
+                vm.UnsafeCall("main", null);
+                return null;
+            }, this.richTextBoxScriptInput.Text);
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)

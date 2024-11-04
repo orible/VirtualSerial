@@ -50,9 +50,9 @@ namespace VirtualSerial
 
         public enum ReadMode
         {
-            LINE_BUFFERED,
-            STOP_BUFFERED,
-            RAW,
+            LINE_BUFFERED = 1,
+            STOP_BUFFERED = 2,
+            RAW = 3,
         }
 
         private byte[] GetStopCode()
@@ -184,7 +184,7 @@ namespace VirtualSerial
                 {
                     switch (e)
                     {
-                        case TimeoutException:
+                        case System.TimeoutException:
                             break;
                         default:
                             this.richTextBoxInputLog.Invoke((string data) =>
@@ -317,7 +317,7 @@ namespace VirtualSerial
                         {
                             var readMode = ctx[1];
                             var message = ctx[0];
-                            vm.Call("RECEIVE", message);
+                            vm.UnsafeCall("RECEIVE", message);
                             return null;
                         }, message, readMode);
                     }
@@ -818,6 +818,11 @@ namespace VirtualSerial
         private void richTextBoxConsole_KeyPress(object sender, KeyPressEventArgs e)
         {
             DrawCaret(this.richTextBoxConsole);
+            if (this.richTextBoxConsole.SelectionStart != this.richTextBoxConsole.Text.Length)
+            {
+                e.Handled = true;
+            }
+
             switch (e.KeyChar)
             {
                 case '\b':
