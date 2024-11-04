@@ -63,7 +63,7 @@ namespace VirtualSerial
                 });
                 return null;
             });
-        }                                                        
+        }
 
         void Error(string s)
         {
@@ -86,11 +86,11 @@ namespace VirtualSerial
         object Log(string s)
         {
             if (this.IsHandleCreated)
-            Invoke(() =>
-            {
-                this.richTextBoxLog.AppendText(s + "\n");
-                this.richTextBoxLog.ScrollToCaret();
-            });
+                Invoke(() =>
+                {
+                    this.richTextBoxLog.AppendText(s + "\n");
+                    this.richTextBoxLog.ScrollToCaret();
+                });
             return null;
         }
 
@@ -159,13 +159,6 @@ namespace VirtualSerial
         {
             UpdateTitle();
             FlagScriptChanged = true;
-        }
-
-        private void attachToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // classic flipflop :)
-            FlagScriptIsAttached = !FlagScriptIsAttached;
-            attachToolStripMenuItem.Text = state.Connected ? "Detach" : "Attach";
         }
 
         private void ScriptTerminal_KeyDown(object sender, KeyEventArgs e)

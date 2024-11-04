@@ -36,8 +36,6 @@
             compileToolStripMenuItem = new ToolStripMenuItem();
             runToolStripMenuItem = new ToolStripMenuItem();
             stopToolStripMenuItem = new ToolStripMenuItem();
-            attachToolStripMenuItem = new ToolStripMenuItem();
-            testToolStripMenuItem = new ToolStripMenuItem();
             richTextBoxScriptInput = new RichTextBox();
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
@@ -57,7 +55,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, compileToolStripMenuItem, runToolStripMenuItem, stopToolStripMenuItem, attachToolStripMenuItem, testToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, compileToolStripMenuItem, runToolStripMenuItem, stopToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(800, 24);
@@ -74,15 +72,15 @@
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(103, 22);
-            openToolStripMenuItem.Text = "Open";
+            openToolStripMenuItem.Size = new Size(136, 22);
+            openToolStripMenuItem.Text = "Open Script";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // saveToolStripMenuItem
             // 
             saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(103, 22);
-            saveToolStripMenuItem.Text = "Save";
+            saveToolStripMenuItem.Size = new Size(136, 22);
+            saveToolStripMenuItem.Text = "Save Script";
             saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
             // 
             // compileToolStripMenuItem
@@ -106,21 +104,6 @@
             stopToolStripMenuItem.Size = new Size(43, 20);
             stopToolStripMenuItem.Text = "Stop";
             stopToolStripMenuItem.Click += stopToolStripMenuItem_Click;
-            // 
-            // attachToolStripMenuItem
-            // 
-            attachToolStripMenuItem.Enabled = false;
-            attachToolStripMenuItem.Name = "attachToolStripMenuItem";
-            attachToolStripMenuItem.Size = new Size(54, 20);
-            attachToolStripMenuItem.Text = "Attach";
-            attachToolStripMenuItem.Click += attachToolStripMenuItem_Click;
-            // 
-            // testToolStripMenuItem
-            // 
-            testToolStripMenuItem.Enabled = false;
-            testToolStripMenuItem.Name = "testToolStripMenuItem";
-            testToolStripMenuItem.Size = new Size(39, 20);
-            testToolStripMenuItem.Text = "Test";
             // 
             // richTextBoxScriptInput
             // 
@@ -179,6 +162,7 @@
             // groupBox2
             // 
             groupBox2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            groupBox2.BackColor = SystemColors.Control;
             groupBox2.Controls.Add(richTextBoxLog);
             groupBox2.Location = new Point(3, 3);
             groupBox2.Name = "groupBox2";
@@ -189,17 +173,17 @@
             // 
             // richTextBoxLog
             // 
-            richTextBoxLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             richTextBoxLog.BorderStyle = BorderStyle.None;
-            richTextBoxLog.Location = new Point(6, 22);
+            richTextBoxLog.Dock = DockStyle.Fill;
+            richTextBoxLog.Location = new Point(3, 19);
             richTextBoxLog.Name = "richTextBoxLog";
             richTextBoxLog.ReadOnly = true;
             richTextBoxLog.ScrollBars = RichTextBoxScrollBars.ForcedVertical;
-            richTextBoxLog.Size = new Size(758, 79);
+            richTextBoxLog.Size = new Size(764, 85);
             richTextBoxLog.TabIndex = 0;
             richTextBoxLog.Text = "";
             // 
-            // ScriptTerminal
+            // ScriptTerminalForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -209,7 +193,7 @@
             Controls.Add(menuStrip1);
             Icon = (Icon)resources.GetObject("$this.Icon");
             MainMenuStrip = menuStrip1;
-            Name = "ScriptTerminal";
+            Name = "ScriptTerminalForm";
             Text = "LScripter";
             Load += ScriptTerminal_Load;
             KeyDown += ScriptTerminal_KeyDown;
@@ -233,8 +217,6 @@
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;
         private RichTextBox richTextBoxScriptInput;
-        private ToolStripMenuItem attachToolStripMenuItem;
-        private ToolStripMenuItem testToolStripMenuItem;
         private ToolStripMenuItem saveToolStripMenuItem;
         private StatusStrip statusStrip1;
         private ToolStripStatusLabel toolStripStatusLabel1;

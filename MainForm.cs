@@ -36,6 +36,7 @@ namespace VirtualSerial
                 DataBits.Seven,
                 DataBits.Eight
             };
+            comboBoxRecvEncoding.DataSource = new Message.SendAsEncoding[] { Message.SendAsEncoding.ASCII, Message.SendAsEncoding.ASCII_utf8, Message.SendAsEncoding.ASCII_UTF7 };
             comboBoxDataBit.DisplayMember = "Item1";
             comboBoxHandshake.DataSource = new Handshake[] { Handshake.None, Handshake.XOnXOff, Handshake.RequestToSend, Handshake.RequestToSendXOnXOff };
             comboBoxSendAs.DataSource = new Message.SendAsEncoding[] { Message.SendAsEncoding.ASCII, Message.SendAsEncoding.ASCII_utf8, Message.SendAsEncoding.ASCII_UTF7 };
@@ -87,7 +88,7 @@ namespace VirtualSerial
 
             nHeight = Font.Height;
 
-            CreateCaret(ctrl.Handle, IntPtr.Zero, nWidth, nHeight);
+            CreateCaret(ctrl.Handle, IntPtr.Zero, nWidth, nHeight - 2);
             ShowCaret(ctrl.Handle);
         }
 
@@ -116,7 +117,7 @@ namespace VirtualSerial
         }
         private void UpdateInfo(int read, int write)
         {
-            toolStripStatusLabelReadWrite.Text = $"IO rx {read / 1024} KB / tx {write / 1024} KB";
+            toolStripStatusLabelReadWrite.Text = $"IO rx {read}B / tx {write}B";
         }
 
         private void _lostFocus(object? sender, EventArgs e)
@@ -219,7 +220,6 @@ namespace VirtualSerial
         List<string> readMessages = new List<string>();
         volatile bool ReadThreadRunning;
         const int ReadChunkSize = 512;
-        
 
         // Poll open port and control message thread
         void _ReadOpenPort(object state)
@@ -513,17 +513,31 @@ namespace VirtualSerial
         }
 
         bool skipTextBoxUpdate = false;
-        private void richTextBoxInputHex_TextChanged(object sender, EventArgs e) { }
+        private void richTextBoxInputHex_TextChanged(object sender, EventArgs e)
+        {
+            if (richTextBoxInputHex.Modified)
+            {
+                string str = richTextBoxInputHex.Text;
+                byte[] buffer = Parse.ParseBadHexStringLiteral(str, 2);
+                // convert back to text to show it in the text representation box
+                string text = System.Text.Encoding.ASCII.GetString(buffer);
+                if (!skipTextBoxUpdate)
+                    richTextBoxInput.Text = text;
+                skipTextBoxUpdate = false;
+            }
+        }
         private void richTextBoxInput_TextChanged(object sender, EventArgs e)
         {
             // convert ascii to text
-            if (skipTextBoxUpdate) { skipTextBoxUpdate = false; return; }
+            if (richTextBoxInput.Modified)
+            {
+                skipTextBoxUpdate = true;
+                InputTextHistory.UpdateBuffer(this.richTextBoxInput.Text);
 
-            InputTextHistory.UpdateBuffer(this.richTextBoxInput.Text);
-
-            byte[] buf = Encoding.ASCII.GetBytes(this.richTextBoxInput.Text);
-            string hexbuf = BitConverter.ToString(buf, 0, buf.Length).Replace("-", " ");
-            richTextBoxInputHex.Text = hexbuf;
+                byte[] buf = Encoding.ASCII.GetBytes(this.richTextBoxInput.Text);
+                string hexbuf = BitConverter.ToString(buf, 0, buf.Length).Replace("-", " ");
+                richTextBoxInputHex.Text = hexbuf;
+            }
         }
 
         private void buttonConvText_Click(object sender, EventArgs e)
@@ -736,7 +750,7 @@ namespace VirtualSerial
                     port.ReadTimeout = (int)ctx[7];
                     SetUIFromPortSettings(port);
                     InitPortFromUI();
-                    return vm.Ret(null);
+                    return false;
                 });
             });
 

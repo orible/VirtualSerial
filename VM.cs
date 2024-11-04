@@ -47,24 +47,16 @@ namespace VirtualSerial
         {
             CallListeners("_log", s);
         }
+
         void _DoMessage(VMMessage msg)
         {
             switch (msg.Code)
             {
-                /*case VMMESSAGE.RECOMPILE_SCRIPT:
-                    _compile();
-                    break;
-                case VMMESSAGE.RUN_SCRIPT:
-                    if (IsCompiled())
-                        fnMain.Function.Call();
-                    break;*/
                 case VMMESSAGE.CALLFUNC:
                     {
                         VMMessageFuncCall call = ((VMMessageFuncCall)msg.Data);
                         // get global function and execute it
-                        string fnc = call.Call;
                         _call(call.Call, call.args);
-                        //CallRegistrations(fnc);
                     }
                     break;
                 case VMMESSAGE.CALLHOOK:
@@ -83,10 +75,7 @@ namespace VirtualSerial
                     break;
             }
         }
-        private void SendMessage(VMMessage data)
-        {
-            this._in.Add(data);
-        }
+        private void SendMessage(VMMessage data) => this._in.Add(data);      
 
         // tick VM thread until signalled to stop
         void _Thread(object ctx)
@@ -204,6 +193,8 @@ namespace VirtualSerial
                 this.Args = args;
             }
         }
+
+        public delegate object? FuncInvoke(VM vm, object[] args);
         public class VMFuncInvoke : Callback
         {
             public string Filter;
@@ -214,6 +205,7 @@ namespace VirtualSerial
                 this.Func = Func;
             }
         }
+
         public class VMDelegate
         {
             public string UID = Guid.NewGuid().ToString();
@@ -225,6 +217,7 @@ namespace VirtualSerial
                 this.Args = Args;
             }
         }
+
         private class VMHooks : Callback
         {
             public DynValue Func;
@@ -235,28 +228,7 @@ namespace VirtualSerial
                 this.Args = Args;
             }
         }
-
-        void ExpandOps(ref Table reftable)
-        {
-            (string, DynValue)[] ops =
-            {
-                //("SEND", (Func<string, int>)lfuncSend),
-            };
-
-            foreach (var e in ops)
-            {
-                //reftable[e.ToUpper()] = false;
-                //reftable[e.ToLower()] = false;
-            }
-        }
-        public class VMRet
-        {
-
-        }
-        public VMRet Ret(params object[] vars)
-        {
-            return new VMRet();
-        }
+   
         public class Callback
         {
             public string UID;
@@ -266,6 +238,7 @@ namespace VirtualSerial
                 UID = Guid.NewGuid().ToString();
             }
         }
+
         public class Timer: Callback
         {
             public DynValue Func;
@@ -279,18 +252,24 @@ namespace VirtualSerial
                 this.Func = Func;
             }
         }
+
         public class VMEvent
         {
             public VMEventCodeEnum Code;
             public object Data;
-            public VMEvent(VMEventCodeEnum code, object Data) { this.Code = code; this.Data = Data; }
+            public VMEvent(VMEventCodeEnum code, object Data) { 
+                this.Code = code;
+                this.Data = Data;
+            }
         };
+
         public delegate void VMEventHandler(object sender, VMEvent e);
         public event VMEventHandler EventHandler;
         readonly string[] ReceiveEvents =
         {
             "REGISTER_RECEIVE_LINE",
         };
+
         private void _attachGlobals(ref Script vmScript)
         {
             // assign global functions - this will overwrite them if they're defined in the script
@@ -382,17 +361,17 @@ namespace VirtualSerial
             int writetimeout)
         {
             CallListeners("connect", port, buffermode, baud, parity, stop, data, readtimeout, writetimeout);
-            return -1;
+            return 1;
         }
         private int lfuncDisconnect()
         {
             CallListeners("disconnect");
-            return -1;
+            return 1;
         }
         private int lfuncRemoveTimer(string name)
         {
             this.timers.Remove(name);
-            return -1;
+            return 1;
         }
         private int lfuncAddTimer(string name, int delay, int repeat, DynValue value)
         {
@@ -466,7 +445,7 @@ namespace VirtualSerial
             mutInvokeCallbacks.ReleaseMutex();
             return invoke.UID;
         }
-        public delegate object? FuncInvoke(VM vm, object[] args);
+
         public void Invoke(FuncInvoke action, params object[] args)
         {
             //if (!IsRunningThreaded())
@@ -476,6 +455,7 @@ namespace VirtualSerial
             //}
             SendMessage(new VMMessage(VMMESSAGE.DELEGATE, new VMDelegate(action, args)));
         }
+
         private bool _call(string function, params object[] args)
         {
             if (this.fnMain == null)
@@ -497,6 +477,7 @@ namespace VirtualSerial
             CallListeners("_func_post", function, args);
             return true;
         }
+
         private void _callHooks(string filter, params object[] args)
         {
             mutHookListeners.WaitOne();
@@ -506,28 +487,17 @@ namespace VirtualSerial
             }
             mutHookListeners.ReleaseMutex();
         }
+
         // call listeners
         public void UnsafeCallHook(string hookfilter, params object[] args)
         {
             hookfilter = hookfilter.ToUpper();
-            //if (!UnsafeIsCompiled()) return;
-            //if (IsRunningThreaded())
-            //{
-            //    SendMessage(new VMMessage(VMMESSAGE.CALLHOOK, hookfilter, args));
-            //    return;
-            //} 
             _callHooks(hookfilter, args);
         }
+
         // call will execute the specified script
         public void UnsafeCall(string function, params object[] args)
         {
-            //function = function.ToUpper();
-            //if (!UnsafeIsCompiled()) return;
-            //if (IsRunningThreaded())
-            //{
-            //    SendMessage(new VMMessage(VMMESSAGE.CALLFUNC, function, args));
-            //    return;
-            //}
             _call(function, args);
         }
     }
