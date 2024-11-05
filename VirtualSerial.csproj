@@ -41,6 +41,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="configs\com0com.cfg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="configs\example.cfg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

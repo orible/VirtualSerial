@@ -231,7 +231,12 @@ namespace VirtualSerial
 
             ReadMode readMode = initState.buffermode;
             ReadThreadRunning = true;
-
+            string[] funcs =
+            {
+                "LINE_BUFFERED",
+                "STOP_BUFFERED",
+                "RAW",
+            };
 
             StopBuffer _stopBuffer = new StopBuffer();
             //MemoryStream mem = new MemoryStream();
@@ -321,7 +326,9 @@ namespace VirtualSerial
                         {
                             var readMode = ctx[1];
                             var message = ctx[0];
+                            var f = funcs[(int)readMode-1];
                             vm.UnsafeCall("RECEIVE", message);
+                            vm.UnsafeCall("RECEIVE_" + f, message);
                             return null;
                         }, message, readMode);
                     }

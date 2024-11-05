@@ -620,27 +620,27 @@
             // presetToolStripMenuItem
             // 
             presetToolStripMenuItem.Name = "presetToolStripMenuItem";
-            presetToolStripMenuItem.Size = new Size(142, 22);
+            presetToolStripMenuItem.Size = new Size(180, 22);
             presetToolStripMenuItem.Text = "Load Preset";
             presetToolStripMenuItem.Click += presetToolStripMenuItem_Click;
             // 
             // savePesetToolStripMenuItem
             // 
             savePesetToolStripMenuItem.Name = "savePesetToolStripMenuItem";
-            savePesetToolStripMenuItem.Size = new Size(142, 22);
+            savePesetToolStripMenuItem.Size = new Size(180, 22);
             savePesetToolStripMenuItem.Text = "Save Preset";
             savePesetToolStripMenuItem.Click += savePesetToolStripMenuItem_Click;
             // 
             // loadSessionToolStripMenuItem
             // 
             loadSessionToolStripMenuItem.Name = "loadSessionToolStripMenuItem";
-            loadSessionToolStripMenuItem.Size = new Size(142, 22);
+            loadSessionToolStripMenuItem.Size = new Size(180, 22);
             loadSessionToolStripMenuItem.Text = "Load Session";
             // 
             // saveSessionToolStripMenuItem
             // 
             saveSessionToolStripMenuItem.Name = "saveSessionToolStripMenuItem";
-            saveSessionToolStripMenuItem.Size = new Size(142, 22);
+            saveSessionToolStripMenuItem.Size = new Size(180, 22);
             saveSessionToolStripMenuItem.Text = "Save Session";
             // 
             // scriptingToolStripMenuItem
