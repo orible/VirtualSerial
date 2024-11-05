@@ -279,7 +279,7 @@ namespace VirtualSerial
             vmScript.Globals["SETBUFFER"] = (Func<string, string, int>)lfuncSetBuffer;
             vmScript.Globals["REGISTER"] = (Func<string, DynValue, int>)lfuncRegisterHook;
             vmScript.Globals["REGISTER_RECEIVE_LINE"] = (Func<string, DynValue, int>)lfuncReceiveHook;
-            vmScript.Globals["CONNECT"] = (Func<string, string, int, string, float, int, int, int, int>)lfuncConnect;
+            vmScript.Globals["CONNECT"] = (Func<string, string, int, int, int, int, int, int, int>)lfuncConnect;
             vmScript.Globals["DISCONNECT"] = (Func<int>)lfuncDisconnect;
             vmScript.Globals["PRINT"] = (Func<string, int>)lfuncPrint;
             vmScript.Globals["DEBUG"] = (Func<string, int>)lfuncPrint;
@@ -354,8 +354,8 @@ namespace VirtualSerial
             string port,
             string buffermode,
             int baud,
-            string parity,
-            float stop,
+            int parity,
+            int stop,
             int data,
             int readtimeout,
             int writetimeout)

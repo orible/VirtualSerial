@@ -745,6 +745,9 @@ namespace VirtualSerial
                     port.PortName = (string)ctx[0];
                     port.BufferMode = ReadMode.RAW;
                     port.BaudRate = (int)ctx[2];
+                    port.Parity = (Parity)ctx[3];
+                    port.StopBits = (StopBits)ctx[4];
+                    port.DataBits = (DataBits)ctx[5];
                     //TODO
                     port.WriteTimeout = (int)ctx[6];
                     port.ReadTimeout = (int)ctx[7];
