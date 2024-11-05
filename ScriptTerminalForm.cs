@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Forms.Integration;
+using FastColoredTextBoxNS;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Serialization.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -32,6 +33,8 @@ namespace VirtualSerial
         {
             stopToolStripMenuItem.Enabled = false;
             runToolStripMenuItem.Enabled = false;
+            this.richTextBoxScriptInput.Language = Language.Lua;
+            this.richTextBoxScriptInput.SyntaxHighlighter.InitStyleSchema(FastColoredTextBoxNS.Language.Lua);
         }
         public void SetVM(VM vmRef)
         {
@@ -172,6 +175,18 @@ namespace VirtualSerial
         private async void stopToolStripMenuItem_Click(object sender, EventArgs e)
         {
             vm.Stop();
+        }
+
+        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = dlg.Filter = "Script|*.lua";
+            dlg.InitialDirectory = Path.Join(System.Windows.Forms.Application.StartupPath, "lua");
+            if (dlg.ShowDialog() != DialogResult.OK) return;
+            //dlg.CheckPathExists;
+            var path = dlg.FileName;
+            richTextBoxScriptInput.Text = "";
+            FlagScriptChanged = true;
         }
     }
 }

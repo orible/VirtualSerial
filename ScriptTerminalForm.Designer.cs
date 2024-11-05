@@ -1,4 +1,6 @@
-﻿namespace VirtualSerial
+﻿using FastColoredTextBoxNS;
+
+namespace VirtualSerial
 {
     partial class ScriptTerminalForm
     {
@@ -28,6 +30,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ScriptTerminalForm));
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
@@ -36,14 +39,16 @@
             compileToolStripMenuItem = new ToolStripMenuItem();
             runToolStripMenuItem = new ToolStripMenuItem();
             stopToolStripMenuItem = new ToolStripMenuItem();
-            richTextBoxScriptInput = new RichTextBox();
+            richTextBoxScriptInput = new FastColoredTextBox();
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
             splitContainer1 = new SplitContainer();
             groupBox1 = new GroupBox();
             groupBox2 = new GroupBox();
             richTextBoxLog = new RichTextBox();
+            newToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)richTextBoxScriptInput).BeginInit();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -64,7 +69,7 @@
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, saveToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newToolStripMenuItem, openToolStripMenuItem, saveToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(37, 20);
             fileToolStripMenuItem.Text = "File";
@@ -72,15 +77,15 @@
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(136, 22);
+            openToolStripMenuItem.Size = new Size(180, 22);
             openToolStripMenuItem.Text = "Open Script";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // saveToolStripMenuItem
             // 
             saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(136, 22);
-            saveToolStripMenuItem.Text = "Save Script";
+            saveToolStripMenuItem.Size = new Size(180, 22);
+            saveToolStripMenuItem.Text = "Save";
             saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
             // 
             // compileToolStripMenuItem
@@ -108,11 +113,22 @@
             // richTextBoxScriptInput
             // 
             richTextBoxScriptInput.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            richTextBoxScriptInput.AutoCompleteBracketsList = new char[] { '(', ')', '{', '}', '[', ']', '"', '"', '\'', '\'' };
+            richTextBoxScriptInput.AutoScrollMinSize = new Size(27, 14);
+            richTextBoxScriptInput.BackBrush = null;
+            richTextBoxScriptInput.CharHeight = 14;
+            richTextBoxScriptInput.CharWidth = 8;
+            richTextBoxScriptInput.DisabledColor = Color.FromArgb(100, 180, 180, 180);
+            richTextBoxScriptInput.Font = new Font("Courier New", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            richTextBoxScriptInput.IsReplaceMode = false;
             richTextBoxScriptInput.Location = new Point(6, 22);
             richTextBoxScriptInput.Name = "richTextBoxScriptInput";
+            richTextBoxScriptInput.Paddings = new Padding(0);
+            richTextBoxScriptInput.SelectionColor = Color.FromArgb(60, 0, 0, 255);
+            richTextBoxScriptInput.ServiceColors = (ServiceColors)resources.GetObject("richTextBoxScriptInput.ServiceColors");
             richTextBoxScriptInput.Size = new Size(758, 247);
             richTextBoxScriptInput.TabIndex = 1;
-            richTextBoxScriptInput.Text = "";
+            richTextBoxScriptInput.Zoom = 100;
             richTextBoxScriptInput.TextChanged += richTextBoxScriptInput_TextChanged;
             // 
             // statusStrip1
@@ -183,6 +199,13 @@
             richTextBoxLog.TabIndex = 0;
             richTextBoxLog.Text = "";
             // 
+            // newToolStripMenuItem
+            // 
+            newToolStripMenuItem.Name = "newToolStripMenuItem";
+            newToolStripMenuItem.Size = new Size(180, 22);
+            newToolStripMenuItem.Text = "New";
+            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
+            // 
             // ScriptTerminalForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -199,6 +222,7 @@
             KeyDown += ScriptTerminal_KeyDown;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)richTextBoxScriptInput).EndInit();
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
             splitContainer1.Panel1.ResumeLayout(false);
@@ -216,7 +240,7 @@
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;
-        private RichTextBox richTextBoxScriptInput;
+        private FastColoredTextBox richTextBoxScriptInput;
         private ToolStripMenuItem saveToolStripMenuItem;
         private StatusStrip statusStrip1;
         private ToolStripStatusLabel toolStripStatusLabel1;
@@ -229,5 +253,6 @@
         private GroupBox groupBox2;
         private ToolStripMenuItem runToolStripMenuItem;
         private ToolStripMenuItem stopToolStripMenuItem;
+        private ToolStripMenuItem newToolStripMenuItem;
     }
 }
