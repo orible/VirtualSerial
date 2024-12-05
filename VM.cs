@@ -355,6 +355,10 @@ namespace VirtualSerial
             settings.TickRate = tickrate;
             return 1;
         }
+        private int lfuncConnectT(MoonSharp.Interpreter.Table table)
+        {
+            return -1;
+        }
         private int lfuncConnect(
             string port,
             string buffermode,
