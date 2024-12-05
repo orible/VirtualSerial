@@ -42,7 +42,10 @@ namespace VirtualSerial
             this.vm.RegisterFunctionInvokeListener("disconnect", (vm, dat) => Log($"Disconnect: {dat}"));
             this.vm.RegisterFunctionInvokeListener("connect", (vm, dat) => Log($"Connect: {dat}"));
             this.vm.RegisterFunctionInvokeListener("print", (vm, dat) => Log((string)dat[0]));
-            this.vm.RegisterFunctionInvokeListener("_func", (vm, dat) => Log($"Func: {dat}"));
+            this.vm.RegisterFunctionInvokeListener("_func", (vm, dat) => {
+                Log($"Func: {dat}");
+                return null;
+            });
             this.vm.RegisterFunctionInvokeListener("_log", (vm, dat) => Log((string)dat[0]));
             this.vm.RegisterFunctionInvokeListener("_start", (vm, dat) =>
             {
@@ -51,7 +54,7 @@ namespace VirtualSerial
                 {
                     this.stopToolStripMenuItem.Enabled = true;
                     this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
-                    Log($"Running: {this.stopToolStripMenuItem.Enabled}");
+                    this.toolStripStatusLabel1.Text = "Running: true";
                 });
                 return null;
             });
@@ -62,7 +65,7 @@ namespace VirtualSerial
                 {
                     this.stopToolStripMenuItem.Enabled = false;
                     this.runToolStripMenuItem.Enabled = !this.stopToolStripMenuItem.Enabled;
-                    Log($"Running: {this.stopToolStripMenuItem.Enabled}");
+                    this.toolStripStatusLabel1.Text = "Running: false";
                 });
                 return null;
             });
@@ -74,9 +77,8 @@ namespace VirtualSerial
         }
 
         bool FlagScriptChanged = false;
-        bool FlagScriptSaved = false;
         bool FlagScriptIsAttached = false;
-        string loadedScript;
+        string loadedScriptPath = "";
 
         State state;
         public void OnStateUpdate(object sender, State _stat)
@@ -95,20 +97,6 @@ namespace VirtualSerial
                     this.richTextBoxLog.ScrollToCaret();
                 });
             return null;
-        }
-
-        private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SaveFileDialog dlg = new SaveFileDialog();
-            dlg.Filter = "Script|*.lua";
-            dlg.ShowDialog();
-            dlg.InitialDirectory = Path.GetFullPath("./lua");
-
-            if (dlg.ShowDialog() == DialogResult.OK)
-            {
-                FlagScriptSaved = true;
-                File.WriteAllText(dlg.FileName, this.richTextBoxScriptInput.Text);
-            }
         }
 
         private void compileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -144,18 +132,17 @@ namespace VirtualSerial
             Stream file = dlg.OpenFile();
             using (StreamReader streamReader = new StreamReader(file))
             {
-                loadedScript = dlg.FileName;
-                this.Text = "LScripter | " + loadedScript;
+                loadedScriptPath = Path.GetFullPath(dlg.FileName);
                 this.richTextBoxScriptInput.Text = streamReader.ReadToEnd();
             }
             FlagScriptChanged = true;
+            UpdateTitle();
         }
         void UpdateTitle()
         {
-            if (loadedScript == null || loadedScript.Length < 1)
+            if (loadedScriptPath == null || loadedScriptPath.Length < 1)
                 this.Text = "LScripter | {no script loaded}";
-
-            this.Text = $"LScripter | {loadedScript} {(!FlagScriptSaved ? "[Unsaved]" : "")}";
+            this.Text = $"LScripter | {((loadedScriptPath == "") ? "Untitled" : loadedScriptPath)} {(FlagScriptChanged ? "[Unsaved]" : "[Saved]")}";
         }
 
         private void richTextBoxScriptInput_TextChanged(object sender, EventArgs e)
@@ -166,6 +153,7 @@ namespace VirtualSerial
 
         private void ScriptTerminal_KeyDown(object sender, KeyEventArgs e)
         {
+            FlagScriptChanged = true;
             if (e.Modifiers == Keys.Control && e.KeyCode == Keys.S)
             {
                 saveToolStripMenuItem_Click(sender, e);
@@ -187,6 +175,48 @@ namespace VirtualSerial
             var path = dlg.FileName;
             richTextBoxScriptInput.Text = "";
             FlagScriptChanged = true;
+        }
+
+        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = "Script|*.lua";
+            dlg.InitialDirectory = Path.GetFullPath("./lua");
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                FlagScriptChanged = false;
+                File.WriteAllText(dlg.FileName, this.richTextBoxScriptInput.Text);
+                loadedScriptPath = Path.GetFullPath(dlg.FileName);
+            }
+            UpdateTitle();
+        }
+
+        private async void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (loadedScriptPath == "")
+            {
+                saveAsToolStripMenuItem_Click(sender, e);
+                return;
+            }
+            FlagScriptChanged = false;
+            File.WriteAllText(loadedScriptPath, this.richTextBoxScriptInput.Text);
+            UpdateTitle();
+        }
+
+        private void richTextBoxScriptInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            FlagScriptChanged = true;
+            if (e.Modifiers == Keys.Control && e.KeyCode == Keys.S)
+            {
+                saveToolStripMenuItem_Click(sender, e);
+            }
+            UpdateTitle();
+        }
+
+        private void richTextBoxScriptInput_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

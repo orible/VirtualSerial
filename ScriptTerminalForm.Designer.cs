@@ -34,8 +34,10 @@ namespace VirtualSerial
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ScriptTerminalForm));
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
+            newToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
-            saveToolStripMenuItem = new ToolStripMenuItem();
+            saveToolStripMenuItem1 = new ToolStripMenuItem();
+            saveAsToolStripMenuItem = new ToolStripMenuItem();
             compileToolStripMenuItem = new ToolStripMenuItem();
             runToolStripMenuItem = new ToolStripMenuItem();
             stopToolStripMenuItem = new ToolStripMenuItem();
@@ -46,7 +48,6 @@ namespace VirtualSerial
             groupBox1 = new GroupBox();
             groupBox2 = new GroupBox();
             richTextBoxLog = new RichTextBox();
-            newToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)richTextBoxScriptInput).BeginInit();
             statusStrip1.SuspendLayout();
@@ -69,24 +70,38 @@ namespace VirtualSerial
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newToolStripMenuItem, openToolStripMenuItem, saveToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newToolStripMenuItem, openToolStripMenuItem, saveToolStripMenuItem1, saveAsToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(37, 20);
             fileToolStripMenuItem.Text = "File";
             // 
+            // newToolStripMenuItem
+            // 
+            newToolStripMenuItem.Name = "newToolStripMenuItem";
+            newToolStripMenuItem.Size = new Size(136, 22);
+            newToolStripMenuItem.Text = "New";
+            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
+            // 
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(180, 22);
+            openToolStripMenuItem.Size = new Size(136, 22);
             openToolStripMenuItem.Text = "Open Script";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
-            // saveToolStripMenuItem
+            // saveToolStripMenuItem1
             // 
-            saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(180, 22);
-            saveToolStripMenuItem.Text = "Save";
-            saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
+            saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
+            saveToolStripMenuItem1.Size = new Size(136, 22);
+            saveToolStripMenuItem1.Text = "Save";
+            saveToolStripMenuItem1.Click += saveToolStripMenuItem_Click;
+            // 
+            // saveAsToolStripMenuItem
+            // 
+            saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
+            saveAsToolStripMenuItem.Size = new Size(136, 22);
+            saveAsToolStripMenuItem.Text = "Save As";
+            saveAsToolStripMenuItem.Click += saveAsToolStripMenuItem_Click;
             // 
             // compileToolStripMenuItem
             // 
@@ -114,12 +129,11 @@ namespace VirtualSerial
             // 
             richTextBoxScriptInput.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             richTextBoxScriptInput.AutoCompleteBracketsList = new char[] { '(', ')', '{', '}', '[', ']', '"', '"', '\'', '\'' };
-            richTextBoxScriptInput.AutoScrollMinSize = new Size(27, 14);
+            richTextBoxScriptInput.AutoScrollMinSize = new Size(2, 14);
             richTextBoxScriptInput.BackBrush = null;
             richTextBoxScriptInput.CharHeight = 14;
             richTextBoxScriptInput.CharWidth = 8;
             richTextBoxScriptInput.DisabledColor = Color.FromArgb(100, 180, 180, 180);
-            richTextBoxScriptInput.Font = new Font("Courier New", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
             richTextBoxScriptInput.IsReplaceMode = false;
             richTextBoxScriptInput.Location = new Point(6, 22);
             richTextBoxScriptInput.Name = "richTextBoxScriptInput";
@@ -130,6 +144,8 @@ namespace VirtualSerial
             richTextBoxScriptInput.TabIndex = 1;
             richTextBoxScriptInput.Zoom = 100;
             richTextBoxScriptInput.TextChanged += richTextBoxScriptInput_TextChanged;
+            richTextBoxScriptInput.Load += richTextBoxScriptInput_Load;
+            richTextBoxScriptInput.KeyDown += richTextBoxScriptInput_KeyDown;
             // 
             // statusStrip1
             // 
@@ -199,13 +215,6 @@ namespace VirtualSerial
             richTextBoxLog.TabIndex = 0;
             richTextBoxLog.Text = "";
             // 
-            // newToolStripMenuItem
-            // 
-            newToolStripMenuItem.Name = "newToolStripMenuItem";
-            newToolStripMenuItem.Size = new Size(180, 22);
-            newToolStripMenuItem.Text = "New";
-            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
-            // 
             // ScriptTerminalForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -241,7 +250,6 @@ namespace VirtualSerial
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;
         private FastColoredTextBox richTextBoxScriptInput;
-        private ToolStripMenuItem saveToolStripMenuItem;
         private StatusStrip statusStrip1;
         private ToolStripStatusLabel toolStripStatusLabel1;
         private SplitContainer splitContainer1;
@@ -254,5 +262,7 @@ namespace VirtualSerial
         private ToolStripMenuItem runToolStripMenuItem;
         private ToolStripMenuItem stopToolStripMenuItem;
         private ToolStripMenuItem newToolStripMenuItem;
+        private ToolStripMenuItem saveAsToolStripMenuItem;
+        private ToolStripMenuItem saveToolStripMenuItem1;
     }
 }

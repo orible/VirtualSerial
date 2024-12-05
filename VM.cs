@@ -89,33 +89,37 @@ namespace VirtualSerial
 
                 while (!cancelToken.IsCancellationRequested)
                 {
-                    VMMessage item;
-                    var msg = _in.TryTake(out item);
-                    if (msg)
+                   // VMMessage item;
+                    //var msg = _in.TryTake(out item);
+                    //if (msg)
+                    var item = _in.Take();
+                    
                     {
-                        Log($"got message: {item.Code}");
+                        Log($"[VM] got message: {item.Code}");
                         CallListeners("_domessage");
                         _DoMessage(item);
                     }
                     // do tick
                     _Tick();
                     CallListeners("_tick", null);
-                    Thread.Sleep(1000/5);
+                    //Thread.Sleep(1000/5);
                 }
                 CallListeners("_stop", null);
             }
             catch (InterpreterException e)
             {
+                cancelToken.Cancel();
+                Log("[VM] Thread exception");
                 Log(e.Message.ToString());
                 CallListeners("_exception", e);
                 CallListeners("_stop", null);
-                return;
             } catch (Exception e)
             {
+                Log("[VM] Thread exception");
+                cancelToken.Cancel();
                 Log(e.Message.ToString());
                 CallListeners("_exception", e);
                 CallListeners("_stop", null);
-                return;
             }
         }
         void _Tick()
@@ -297,7 +301,7 @@ namespace VirtualSerial
         }
         public bool IsRunningThreaded()
         {
-            return (thread != null && thread.IsAlive);
+            return (thread != null && thread.IsAlive && !cancelToken.IsCancellationRequested);
         }
 
         public void Stop()
@@ -308,6 +312,7 @@ namespace VirtualSerial
         public bool RunAsThreaded()
         {
             if (IsRunningThreaded()) return false;
+            Log($"[VM] starting thread");
             cancelToken = new();
             lfuncTickRate(15);
             thread = new Thread(new ParameterizedThreadStart(_Thread));
@@ -322,7 +327,7 @@ namespace VirtualSerial
             _attachGlobals(ref vmScript);
             fnMain = _fnMain;
             lScript = vmScript;
-            //UnsafeCall("main", null);
+            // kill self after compile
         }
         public void UnsafeSetScript(string buffer)
         {
@@ -466,6 +471,7 @@ namespace VirtualSerial
                 CallListeners("_func", function, args);
                 this.fnMain.Function.Call();
                 CallListeners("_func_post", function, args);
+                return true;
             }
 
             var fn = this.lScript.Globals.Get(function);
